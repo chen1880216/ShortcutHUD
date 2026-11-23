@@ -126,14 +126,34 @@ exe 启动正常；解压 zip 再跑一遍同样正常。
 `settings.json` 只写 `{"language":"zh_CN"}`，其余键首启合并默认值——不再把开发机的
 窗口位置、`.bak-*` 一起发出去。
 
+## 重复启动会起多个进程
+
+0.6.0-beta.1 发出去后，双击快捷方式几次就会看到任务管理器里挂着好几个 `ShortcutHUD.exe`：
+每一份都会装自己的键盘钩子、试着注册全局热键（后起的注册失败但仍在跑）、各自弹浮窗，
+行为完全无法预期。
+
+修法是 `scripts/single_instance.py` 里的 `SingleInstanceGuard`：创建命名内核互斥体
+`Local\ShortcutHUD.SingleInstance`，`CreateMutexW` 之后如果 `GetLastError()` 是
+`ERROR_ALREADY_EXISTS(183)`，就说明已经有实例占着，直接退出。`main()` 在构造
+`QApplication` 之前就判断，所以第二个进程不会碰键盘钩子和热键。
+
+选择命名互斥体而不是「找窗口/找进程」的理由：
+
+- 互斥体是内核对象，进程崩溃时由系统自动释放，不会像 lock 文件那样留下死锁；
+- 不需要枚举进程（沙箱里枚举进程本身就可能被限制）；
+- `Local\` 前缀表示「当前登录会话」，同一台机器多个用户各自开一个实例是合理的。
+
+代价：暂时只做到「第二个实例安静退出」，还没有把已有窗口唤到前台（托盘程序本来也没有主窗口）。
+
 ## 测试
 
 - 新增/调整：解析层（SHELL_DESKTOP 有自己一层、WPS_UNKNOWN 回退 DEFAULT）、
   `show_all` 不截断、分节视图、两个热键实例的 identifier、`dialog_theme` 的样式契约、
+  单实例互斥体（第二个实例被拒 / 释放后可重新占用 / 非 Windows 放行）、
   版本元数据非 OSError 异常被吞掉。
 - 「禁止收录系统截图键」的检查改为只约束 `GLOBAL` / `DEFAULT` 层：系统截图键在每个应用里
   都一样，写死在每个应用组里会随用户改键而误导。
-- 全量 `python -m unittest` 530 条通过；`tests/test_full_guide_interactions.py`
+- 全量 `python -m unittest` 534 条通过；`tests/test_full_guide_interactions.py`
   里那条布局测试依赖窗口/屏幕状态，偶发失败。
 
 ## 遗留
@@ -141,4 +161,6 @@ exe 启动正常；解压 zip 再跑一遍同样正常。
 - 无修饰键组合（F2 / Delete 等）不在 HUD 契约内，PixPin 那 8 条暂时看不到。
 - 其它六个内置包应用仍按默认行数截断，是否也提到全量待定。
 - PixPin 其它页签（截图 / 长截图 / 贴图窗口 …）需要点鼠标切换，尚未收录。
-- 0.6.0-beta.1 已发布（含本批数据与界面改动），上游 `Fx1an5heng` 的下载链接已改指本仓库。
+- 第二个实例目前只是安静退出，不会把已有实例唤到前台。
+- 0.6.0-beta.1 已发布（含本批数据与界面改动），上游 `Fx1an5heng` 的下载链接已改指本仓库；
+  单实例修复已重传同 tag 的 zip。
