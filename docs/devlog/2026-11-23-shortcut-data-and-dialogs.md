@@ -92,6 +92,40 @@ Ctrl / Alt / Shift 三节列出，每组各自按额度显示，面板高度夹�
 深底、亮字、表头深底白字、输入框/列表/按钮/tab/禁用态全部显式配色，
 其中 `QKeySequenceEdit` 内部的子 `QLineEdit` 需要单独染（它不继承父级背景）。
 
+## 打包版启动即崩（ICU 顶替）
+
+出 release 时第一次跑 `scripts/build_windows.py` 很顺利（229 files / 153.8 MiB），
+但 `dist/ShortcutHUD/ShortcutHUD.exe` 一启动就退出：
+
+```
+ImportError: DLL load failed while importing QtWidgets: 找不到指定的程序。
+```
+
+`_internal/PySide6/Qt6Core.dll` 与 venv 里同名文件 SHA256 完全一致，`shiboken6.abi3.dll`、
+`python313.dll` 都能加载，唯独 `Qt6Core/Gui/Widgets` 与 `pyside6.abi3.dll` 报 127
+（`ERROR_PROC_NOT_FOUND`，不是「找不到文件」）。把 `api-ms-win-*` 与根目录的
+`VCRUNTIME140*.dll` 移走仍报 127，可以先排除 CRT 版本问题。
+
+写了个极简 PE 导入表解析器逐条比对导出符号，才看到真正缺的是：
+
+```
+[dll] icuuc.dll: MISSING 20 -> ['ucnv_open', 'ucnv_close', 'UCNV_FROM_U_CALLBACK_SUBSTITUTE', ...]
+```
+
+PySide6 的 Qt6Core 在 Windows 上链接的是**系统 ICU**（`C:\Windows\System32\icuuc.dll`，
+符号无版本后缀）。构建机的 `PATH` 里有 conda，PyInstaller 顺手把
+`miniconda3\Library\bin\icuuc.dll` + `icudt73.dll` 收进了包根目录；那是带 `_73` 后缀的
+发行版，导不出 `ucnv_open`，于是 Qt6Core 加载失败。跑源码没事，是因为此时
+Windows ICU 从 System32 解析到了。
+
+修法在 `packaging/ShortcutHUD.spec`：进 `COLLECT` 前过滤掉 `icu*.dll`
+（`_drop_bundled_icu`），让打包版也用系统 ICU。重建后 227 files / 120.6 MiB，
+exe 启动正常；解压 zip 再跑一遍同样正常。
+
+顺带把发布脚本收窄了：`dist/config` 只带 `shortcuts.json` + `shortcut_packs`，
+`settings.json` 只写 `{"language":"zh_CN"}`，其余键首启合并默认值——不再把开发机的
+窗口位置、`.bak-*` 一起发出去。
+
 ## 测试
 
 - 新增/调整：解析层（SHELL_DESKTOP 有自己一层、WPS_UNKNOWN 回退 DEFAULT）、
@@ -107,4 +141,4 @@ Ctrl / Alt / Shift 三节列出，每组各自按额度显示，面板高度夹�
 - 无修饰键组合（F2 / Delete 等）不在 HUD 契约内，PixPin 那 8 条暂时看不到。
 - 其它六个内置包应用仍按默认行数截断，是否也提到全量待定。
 - PixPin 其它页签（截图 / 长截图 / 贴图窗口 …）需要点鼠标切换，尚未收录。
-- 便携版 exe 未重新打包，线上 release 仍是 0.5.0-beta.2 的旧数据。
+- 0.6.0-beta.1 已发布（含本批数据与界面改动），上游 `Fx1an5heng` 的下载链接已改指本仓库。
