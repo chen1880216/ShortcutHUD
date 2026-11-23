@@ -62,6 +62,7 @@ from scripts.full_guide_hotkey import (
 )
 from scripts.full_guide_input import GuideWinInputService
 from scripts.full_guide_window import FullGuideWindow
+from scripts.single_instance import SingleInstanceGuard
 
 
 class _WinReleaseBridge(QObject):
@@ -718,8 +719,16 @@ def main() -> None:
     Main entry point for the Shortcut Overlay application.
     Sets up High DPI attributes and runs the QApplication.
     """
-    app = ShortcutOverlayApplication(sys.argv)
-    exit_code: int = app.exec() # Starts the Qt event loop.
+    # 单实例保护：已经在跑时直接退出，避免多个进程各装一套键盘钩子/热键。
+    guard = SingleInstanceGuard()
+    if not guard.acquire():
+        print("ShortcutHUD is already running; exiting this instance.")
+        return
+    try:
+        app = ShortcutOverlayApplication(sys.argv)
+        exit_code: int = app.exec() # Starts the Qt event loop.
+    finally:
+        guard.release()
     sys.exit(exit_code)
 
 if __name__ == '__main__':
