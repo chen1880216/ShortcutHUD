@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from .application_display_names import get_application_display_name
+from .dialog_theme import apply_readable_theme
 from .modifier_state import CANONICAL_MODIFIER_ORDER, normalize_modifier_combination
 from .shortcut_key import (
     ModifierTerminalKeyError,
@@ -516,6 +517,7 @@ class ShortcutEditDialog(QDialog):
         buttons.accepted.connect(self._validate_and_accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+        apply_readable_theme(self)
 
     @property
     def recording_state(self) -> RecordingState:
@@ -908,6 +910,102 @@ class UserShortcutManagerDialog(QDialog):
         self._reload_profile_list()
         self._update_candidate_label()
         self._update_enabled_state()
+        self._apply_readable_theme()
+
+    def _apply_readable_theme(self) -> None:
+        """Paint this dialog explicitly: the inherited overlay background made
+        table headers, hints and labels nearly unreadable on dark themes."""
+
+        self.setStyleSheet(
+            """
+            QDialog {
+                background-color: #2E2E3A;
+                color: #D8DEE9;
+            }
+            QLabel {
+                color: #D8DEE9;
+                background: transparent;
+            }
+            QLineEdit, QComboBox {
+                color: #F2F5FA;
+                background-color: #4A4E5A;
+                border: 1px solid #5A5E6A;
+                border-radius: 3px;
+                padding: 3px 5px;
+                selection-background-color: #3D6EA8;
+                selection-color: #FFFFFF;
+            }
+            QTabWidget::pane {
+                border: 1px solid #454A56;
+                background-color: #2E2E3A;
+            }
+            QTabBar::tab {
+                color: #C8D0DE;
+                background-color: #3A3E4A;
+                border: 1px solid #454A56;
+                border-bottom: none;
+                padding: 6px 12px;
+            }
+            QTabBar::tab:selected {
+                color: #FFFFFF;
+                background-color: #4A4E5A;
+            }
+            QTabBar::tab:hover {
+                background-color: #434855;
+            }
+            QTableWidget {
+                color: #E6E9F0;
+                background-color: #333742;
+                alternate-background-color: #3A3E4A;
+                gridline-color: #454A56;
+                border: 1px solid #454A56;
+                selection-background-color: #3D6EA8;
+                selection-color: #FFFFFF;
+            }
+            QHeaderView::section {
+                color: #F2F5FA;
+                background-color: #3F4450;
+                border: none;
+                border-right: 1px solid #4C5160;
+                border-bottom: 1px solid #4C5160;
+                padding: 5px 6px;
+                font-weight: 600;
+            }
+            QTableCornerButton::section {
+                background-color: #3F4450;
+                border: none;
+            }
+            QListWidget {
+                color: #E6E9F0;
+                background-color: #333742;
+                border: 1px solid #454A56;
+            }
+            QListWidget::item:selected {
+                color: #FFFFFF;
+                background-color: #3D6EA8;
+            }
+            QPushButton {
+                color: #F2F5FA;
+                background-color: #4A4E5A;
+                border: 1px solid #5A5E6A;
+                border-radius: 3px;
+                padding: 5px 10px;
+            }
+            QPushButton:hover {
+                background-color: #555A68;
+            }
+            QPushButton:pressed {
+                background-color: #3F4450;
+            }
+            QPushButton:disabled {
+                color: #7E8391;
+                background-color: #3A3E4A;
+            }
+            QSplitter::handle {
+                background-color: #3A3E4A;
+            }
+            """
+        )
 
     @property
     def draft(self) -> UserProfileDraft:

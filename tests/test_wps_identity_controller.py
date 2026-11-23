@@ -48,7 +48,7 @@ class _Hud:
         self.visible = True
         self.show_count += 1
 
-    def set_entries(self, _app: str, _modifier: str, entries: list, _language: str, _display_name: str | None = None) -> None:
+    def set_entries(self, _app: str, _modifier: str, entries: list, _language: str, _display_name: str | None = None, *, show_all: bool = False) -> None:
         self.entries = entries
 
 
@@ -97,14 +97,18 @@ class WpsIdentityControllerTests(unittest.TestCase):
         self.controller.on_modifiers_changed({"ctrl"})
         self.controller._show_timer.stop()
         self.controller._show_pending_hud()
-        self.assertFalse(self.hud.visible)
-        self.assertTrue(self.controller._identity_delay_elapsed)
+        # While the WPS identity is still unknown the HUD falls back to DEFAULT
+        # rows instead of staying blank.
+        self.assertTrue(self.hud.visible)
+        self.assertEqual([entry.key for entry in self.hud.entries], ["D"])
+        self.assertFalse(self.controller._identity_delay_elapsed)
 
         self.identity.identity_pending = False
         self.identity.current_app_name = "WPSOFFICE.EXE"
         self.controller.on_active_app_changed("WPSOFFICE.EXE")
 
         self.assertTrue(self.hud.visible)
+        self.assertEqual([entry.key for entry in self.hud.entries], ["A"])
         self.assertEqual(self.hud.show_count, 1)
         self.assertFalse(self.controller._show_timer.isActive())
 

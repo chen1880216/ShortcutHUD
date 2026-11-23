@@ -146,11 +146,16 @@ class CurrentApplicationCandidateTracker(QObject):
             except (OSError, TypeError, ValueError):
                 executable_path = None
             self._detection_order += 1
-            descriptor = self._descriptor_factory.describe(
-                normalized_identity,
-                executable_path,
-                order=self._detection_order,
-            )
+            try:
+                descriptor = self._descriptor_factory.describe(
+                    normalized_identity,
+                    executable_path,
+                    order=self._detection_order,
+                )
+            except Exception:  # noqa: BLE001 - never abort the Qt slot
+                # PySide aborts the process on an unhandled slot exception, and
+                # descriptor metadata is only used for display titles.
+                descriptor = None
             self._current_descriptor = descriptor
             if descriptor is not None:
                 self._recent_descriptors = [

@@ -191,14 +191,30 @@ class UserShortcutResolverTests(unittest.TestCase):
             ),
         }
 
-        for app_id in ("WINDOWS_SHELL", "SHELL_DESKTOP", "WPS_UNKNOWN"):
+        # WINDOWS_SHELL stays global-only; the fallback identities may borrow the
+        # DEFAULT rows but must never surface the injected user profile.
+        expected_by_identity = {
+            "WINDOWS_SHELL": [
+                ShortcutEntry("Tab", "Switch windows", "GLOBAL"),
+                ShortcutEntry("F4", "Close current window", "GLOBAL"),
+            ],
+            "SHELL_DESKTOP": [
+                ShortcutEntry("ESC", "Default Escape", "DEFAULT"),
+                ShortcutEntry("Tab", "Switch windows", "GLOBAL"),
+                ShortcutEntry("F4", "Close current window", "GLOBAL"),
+            ],
+            "WPS_UNKNOWN": [
+                ShortcutEntry("ESC", "Default Escape", "DEFAULT"),
+                ShortcutEntry("Tab", "Switch windows", "GLOBAL"),
+                ShortcutEntry("F4", "Close current window", "GLOBAL"),
+            ],
+        }
+
+        for app_id, expected in expected_by_identity.items():
             with self.subTest(app_id=app_id):
                 self.assertEqual(
                     resolve_shortcuts(self.data, app_id, "Alt", users),
-                    [
-                        ShortcutEntry("Tab", "Switch windows", "GLOBAL"),
-                        ShortcutEntry("F4", "Close current window", "GLOBAL"),
-                    ],
+                    expected,
                 )
 
     def test_wps_logical_identity_can_receive_user_overlay(self) -> None:

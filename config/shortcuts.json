@@ -169,6 +169,18 @@
   },
   "WPS_WRITER": {
     "Ctrl": {
+      "F": { "en": "Find", "zh": "查找" },
+      "C": { "en": "Copy", "zh": "复制" },
+      "V": { "en": "Paste", "zh": "粘贴" },
+      "X": { "en": "Cut", "zh": "剪切" },
+      "A": { "en": "Select All", "zh": "全选" },
+      "Z": { "en": "Undo", "zh": "撤销" },
+      "Y": { "en": "Redo", "zh": "重做" },
+      "S": { "en": "Save", "zh": "保存" },
+      "P": { "en": "Print", "zh": "打印" },
+      "N": { "en": "New Document", "zh": "新建文档" },
+      "O": { "en": "Open", "zh": "打开" },
+      "W": { "en": "Close Document", "zh": "关闭文档" },
       "B": { "en": "Bold", "zh": "加粗" },
       "I": { "en": "Italic", "zh": "斜体" },
       "U": { "en": "Underline", "zh": "下划线" },
@@ -694,6 +706,22 @@
       "F10": { "en": "Context Menu", "zh": "上下文菜单" }
     }
   },
+  "SHELL_DESKTOP": {
+    "Ctrl": {
+      "A": { "en": "Select All", "zh": "全选" },
+      "C": { "en": "Copy", "zh": "复制" },
+      "X": { "en": "Cut", "zh": "剪切" },
+      "V": { "en": "Paste", "zh": "粘贴" },
+      "Z": { "en": "Undo", "zh": "撤销" },
+      "Y": { "en": "Redo", "zh": "重做" }
+    },
+    "Ctrl+Shift": {
+      "N": { "en": "New Folder", "zh": "新建文件夹" }
+    },
+    "Alt": {
+      "Enter": { "en": "Properties", "zh": "属性" }
+    }
+  },
   "WINDOWS_SHELL": {},
   "WINDOWSTERMINAL.EXE": {
     "Ctrl": {
@@ -1072,6 +1100,120 @@
       "1": { "en": "Lit Mode", "zh": "光照模式" },
       "2": { "en": "Unlit Mode", "zh": "无光照模式" },
       "3": { "en": "Wireframe Mode", "zh": "线框模式" }
+    }
+  },
+
+  "NETCATTY.EXE": {
+    "Ctrl": {
+      "TAB": { "en": "Next Tab", "zh": "下一个标签页" },
+      "W": { "en": "Close Tab", "zh": "关闭标签页" },
+      "T": { "en": "New Local Tab", "zh": "新建本地标签页" },
+      "K": { "en": "Open Command Palette", "zh": "打开命令面板" },
+      "J": { "en": "Quick Switch", "zh": "快速切换" },
+      "P": { "en": "Open Port Forwarding", "zh": "打开端口转发" },
+      "F": { "en": "Open Terminal Search", "zh": "打开终端搜索" },
+      "B": { "en": "Switch the Broadcast Mode", "zh": "切换广播模式" },
+      "C": { "en": "SFTP: Copy Files", "zh": "SFTP：复制文件" },
+      "X": { "en": "SFTP: Cut Files", "zh": "SFTP：剪切文件" },
+      "V": { "en": "SFTP: Paste Files", "zh": "SFTP：粘贴文件" },
+      "A": { "en": "SFTP: Select All Files", "zh": "SFTP：全选文件" },
+      "ENTER": { "en": "SFTP: Navigate to Selected Directory", "zh": "SFTP：转到选中的目录" },
+      "=": { "en": "Increase Terminal Font Size", "zh": "增大终端字号" },
+      "-": { "en": "Decrease Terminal Font Size", "zh": "减小终端字号" },
+      "0": { "en": "Reset Terminal Font Size", "zh": "重置终端字号" },
+      ",": { "en": "Open Settings", "zh": "打开设置" },
+      "\\": { "en": "Toggle Side Panel", "zh": "切换侧边栏" },
+      "1": { "en": "Switch to Tab [1...9]", "zh": "切换到标签页 [1...9]" }
+    },
+    "Ctrl+Shift": {
+      "C": { "en": "Copy from Terminal", "zh": "从终端复制" },
+      "V": { "en": "Paste to Terminal", "zh": "粘贴到终端" },
+      "D": { "en": "Split Horizontal", "zh": "水平分屏" },
+      "E": { "en": "Split Vertical", "zh": "垂直分屏" },
+      "O": { "en": "Open SFTP", "zh": "打开 SFTP" },
+      "B": { "en": "Toggle Host List", "zh": "切换主机列表" },
+      "TAB": { "en": "Previous Tab", "zh": "上一个标签页" },
+      "W": { "en": "Close Session Pane", "zh": "关闭会话窗格" },
+      "X": { "en": "Paste Selection to Terminal", "zh": "将选区粘贴到终端" },
+      "A": { "en": "Select All in Terminal", "zh": "全选终端内容" },
+      "K": { "en": "Clear Terminal Buffer", "zh": "清空终端缓冲区" },
+      "J": { "en": "New Workspace", "zh": "新建工作区" },
+      "S": { "en": "Open Snippets", "zh": "打开代码片段" },
+      "U": { "en": "Toggle Window Transparency", "zh": "切换窗口透明度" },
+      "N": { "en": "SFTP: New Folder", "zh": "SFTP：新建文件夹" }
+    },
+    "Ctrl+Alt": {
+      "UP": { "en": "Focus Pane Above", "zh": "焦点移到上方窗格" },
+      "DOWN": { "en": "Focus Pane Below", "zh": "焦点移到下方窗格" },
+      "LEFT": { "en": "Focus Pane Left", "zh": "焦点移到左侧窗格" },
+      "RIGHT": { "en": "Focus Pane Right", "zh": "焦点移到右侧窗格" }
+    },
+    "Alt": {
+      "M": { "en": "Toggle Pane Zoom", "zh": "切换窗格缩放" }
+    },
+    "NoModifier": {
+      "ENTER": { "en": "SFTP: Open File / Enter Directory", "zh": "SFTP：打开文件 / 进入目录" },
+      "BACKSPACE": { "en": "SFTP: Go to Parent Directory", "zh": "SFTP：转到上级目录" },
+      "F5": { "en": "SFTP: Refresh", "zh": "SFTP：刷新" },
+      "F2": { "en": "SFTP: Rename File", "zh": "SFTP：重命名文件" },
+      "DELETE": { "en": "SFTP: Delete Files", "zh": "SFTP：删除文件" }
+    }
+  },
+
+  "PIXPIN.EXE": {
+    "Ctrl": {
+      "1": { "en": "Screenshot", "zh": "截图" },
+      "4": { "en": "Custom / Delayed Screenshot", "zh": "自定义/延时截图" },
+      "2": { "en": "Pin Image", "zh": "贴图" },
+      "3": { "en": "Restore Last Closed Pin", "zh": "恢复上次关闭的贴图" },
+      "5": { "en": "Close All Pinned Windows", "zh": "关闭所有贴图窗口" },
+      "W": { "en": "Close", "zh": "关闭" },
+      "C": { "en": "Copy", "zh": "复制" },
+      "S": { "en": "Save To File", "zh": "保存到文件" },
+      "P": { "en": "Print", "zh": "打印" },
+      "Z": { "en": "Undo Mark", "zh": "撤销标注" },
+      "Y": { "en": "Redo Mark", "zh": "重做标注" },
+      "E": { "en": "Enable/Disable Mark Re-edit", "zh": "启用/禁用标注二次编辑" },
+      "Q": { "en": "Translate", "zh": "翻译" }
+    },
+    "Ctrl+Shift": {
+      "S": { "en": "Quick Save", "zh": "快速保存" },
+      "Z": { "en": "Clear All Marks", "zh": "清除所有标注" }
+    },
+    "Ctrl+Alt": {
+      "1": { "en": "Screenshot And Copy", "zh": "截图并复制" }
+    },
+    "Alt": {
+      "C": { "en": "Copy Mouse Coordinates", "zh": "复制鼠标坐标" }
+    },
+    "Shift": {
+      "C": { "en": "Detect Text And Copy", "zh": "检测文本并复制" },
+      "E": { "en": "Document Recognition", "zh": "文档识别" },
+      "Q": { "en": "Table Recognition", "zh": "表格识别" },
+      "F": { "en": "LaTeX Recognition", "zh": "LaTeX 识别" },
+      "1": { "en": "Mark Mode: Geometry", "zh": "标注模式：几何图形" },
+      "2": { "en": "Mark Mode: Polyline", "zh": "标注模式：折线" },
+      "3": { "en": "Mark Mode: Arrow", "zh": "标注模式：箭头" },
+      "4": { "en": "Mark Mode: Serial Number", "zh": "标注模式：序号" },
+      "5": { "en": "Mark Mode: Pencil", "zh": "标注模式：铅笔" },
+      "6": { "en": "Mark Mode: Highlighter", "zh": "标注模式：荧光笔" },
+      "7": { "en": "Mark Mode: Mosaic", "zh": "标注模式：马赛克" },
+      "8": { "en": "Mark Mode: Text", "zh": "标注模式：文本" },
+      "9": { "en": "Mark Mode: Eraser", "zh": "标注模式：橡皮擦" },
+      "0": { "en": "Mark Mode: Spotlight", "zh": "标注模式：聚光灯" },
+      "-": { "en": "Mark Mode: Watermark", "zh": "标注模式：水印" },
+      "=": { "en": "Mark Mode: Magnifier", "zh": "标注模式：放大镜" },
+      "[": { "en": "Mark Mode: Auto Mosaic", "zh": "标注模式：自动马赛克" }
+    },
+    "NoModifier": {
+      "Esc": { "en": "Close", "zh": "关闭" },
+      "C": { "en": "Copy Color", "zh": "复制颜色" },
+      "W": { "en": "Move Cursor Up", "zh": "移动光标向上" },
+      "S": { "en": "Move Cursor Down", "zh": "移动光标向下" },
+      "A": { "en": "Move Cursor Left", "zh": "移动光标向左" },
+      "D": { "en": "Move Cursor Right", "zh": "移动光标向右" },
+      "=": { "en": "Simulate Wheel Up", "zh": "模拟滚轮上滚" },
+      "-": { "en": "Simulate Wheel Down", "zh": "模拟滚轮下滚" }
     }
   }
 }

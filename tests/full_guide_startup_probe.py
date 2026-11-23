@@ -35,7 +35,7 @@ def run_probe():
         with patch.object(main, "ConfigManager", return_value=config), \
              patch.object(main, "load_user_shortcut_store", return_value=user_store), \
              patch.object(main, "load_quick_hud_selection_store", return_value=selection_store), \
-             patch.object(main, "FullGuideHotkey", side_effect=lambda app, parent: FullGuideHotkey(app, parent, backend=backend)), \
+             patch.object(main, "FullGuideHotkey", side_effect=lambda app, parent, identifier_candidates=(0x5348, 0x5349): FullGuideHotkey(app, parent, backend=backend, identifier_candidates=identifier_candidates)), \
              patch.object(main.KeyboardHandler, "start_listening"), \
              patch.object(main.WinDiscoveryProxy, "start", return_value=True), \
              patch.object(main.GuideWinInputService, "start", return_value=True), \

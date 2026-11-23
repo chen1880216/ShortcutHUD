@@ -25,6 +25,15 @@ _NORMALIZED_MODIFIER_NAMES = {
     "shift": "Shift",
     "win": "Win",
 }
+# A modifier the hook reported within this window counts as still held, even
+# when the independent physical snapshot reports it released.  Some input
+# stacks (vendor keyboard drivers, remappers, IME layers) deliver Alt key
+# events while GetAsyncKeyState keeps reporting both Alt virtual keys up; the
+# snapshot alone would therefore drop a held Alt on the very next timer pass
+# and the HUD would flash and hide.  The window is far longer than the OS
+# auto-repeat gap (tens of milliseconds) yet short enough to still clear a
+# genuinely stuck modifier whose key-up the hook missed.
+_MODIFIER_HOOK_QUIET_SECONDS: float = 1.5
 
 
 class KeyboardHandler(QObject):
@@ -74,6 +83,8 @@ class KeyboardHandler(QObject):
         # Stores lowercase base names of active modifiers: "ctrl", "shift", "alt", "win".
         self._active_modifiers: Set[str] = set()
         self._modifier_state_revision: int = 0
+        # Monotonic timestamp of the last hook event seen per logical modifier.
+        self._modifier_event_times: Dict[str, float] = {}
         self._modifier_reconciler = (
             modifier_reconciler or PhysicalModifierReconciler()
         )
@@ -334,6 +345,23 @@ class KeyboardHandler(QObject):
         self._reconcile_modifier_state()
         self._sync_state_check_timer()
 
+    def _modifiers_quiet_since(self, modifiers: Set[str]) -> Set[str]:
+        """Return the modifiers the hook has not reported for a while.
+
+        Only these are eligible for physical reconciliation.  A modifier the
+        hook keeps reporting is demonstrably still held, so disagreeing
+        physical snapshots must not clear it.
+        """
+
+        now = time.monotonic()
+        with self._state_lock:
+            last_seen = dict(self._modifier_event_times)
+        return {
+            modifier
+            for modifier in modifiers
+            if now - last_seen.get(modifier, 0.0) >= _MODIFIER_HOOK_QUIET_SECONDS
+        }
+
     def _reconcile_modifier_state(
         self,
         *,
@@ -345,7 +373,19 @@ class KeyboardHandler(QObject):
             previous = self._active_modifiers.copy()
             revision = self._modifier_state_revision
 
-        reconciled = self._modifier_reconciler.reconcile(previous, only=only)
+        candidate_scope = only
+        if candidate_scope is None:
+            # Periodic pass: never overrule a modifier the hook is still
+            # reporting.  Only modifiers that have gone quiet may be cleared by
+            # the physical snapshot (see _MODIFIER_HOOK_QUIET_SECONDS).
+            candidate_scope = self._modifiers_quiet_since(previous)
+            if not candidate_scope:
+                self._sync_state_check_timer()
+                return
+
+        reconciled = self._modifier_reconciler.reconcile(
+            previous, only=candidate_scope
+        )
         if reconciled == previous:
             self._sync_state_check_timer()
             return
@@ -450,6 +490,7 @@ class KeyboardHandler(QObject):
             modifiers_changed_flag = False
             if modifier_base:
                 self._modifier_state_revision += 1
+                self._modifier_event_times[modifier_base] = time.monotonic()
             if modifier_base and event_type_str == "down":
                 if modifier_base not in self._active_modifiers:
                     self._active_modifiers.add(modifier_base)

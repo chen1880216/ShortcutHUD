@@ -34,6 +34,21 @@ class ApplicationDescriptorTests(unittest.TestCase):
 
         self.assertEqual(descriptor.display_name, "My Tool")
 
+    def test_non_oserror_metadata_failure_is_swallowed(self) -> None:
+        class ResourceError(Exception):
+            """Mirrors pywintypes.error, which is not an OSError."""
+
+        def failing_provider(_path: str):
+            raise ResourceError("no version resource section")
+
+        descriptor = ApplicationDescriptorFactory(failing_provider).describe(
+            "my_tool.exe",
+            r"C:\Apps\my_tool.exe",
+        )
+
+        self.assertIsNotNone(descriptor)
+        self.assertEqual(descriptor.display_name, "My Tool")
+
     def test_desktop_has_a_first_class_context_descriptor(self) -> None:
         descriptor = ApplicationDescriptorFactory().describe(WINDOWS_DESKTOP)
 

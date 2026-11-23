@@ -37,6 +37,9 @@ class _FakeHudWindow:
         self.show_calls = 0
         self.hide_calls = 0
         self.rendered: list[tuple[str, str, list[object], str | None, str | None]] = []
+        self.show_all_flags: list[bool] = []
+        self.sections_rendered: list[tuple[str, list[object]]] = []
+        self.sections_header: str | None = None
 
     def isVisible(self) -> bool:
         return self.visible
@@ -56,10 +59,27 @@ class _FakeHudWindow:
         entries: list[object],
         language: str | None,
         application_display_name: str | None = None,
+        *,
+        show_all: bool = False,
     ) -> None:
         self.rendered.append(
             (application_name, modifier_combination, entries, language, application_display_name)
         )
+        self.show_all_flags.append(show_all)
+
+    def set_sections(
+        self,
+        application_name: str,
+        sections: list[tuple[str, list[object]]],
+        language: str | None,
+        application_display_name: str | None = None,
+        header_suffix: str = "",
+        *,
+        show_all: bool = False,
+    ) -> None:
+        self.sections_rendered = list(sections)
+        self.sections_header = f"{application_display_name} · {header_suffix}"
+        self.show_all_flags.append(show_all)
 
 
 class _FakeWinDiscoveryProxy:
@@ -603,6 +623,64 @@ class ShortcutHudControllerTests(unittest.TestCase):
             [(entry.key, entry.source) for entry in entries],
             [("Tab", "GLOBAL"), ("F4", "GLOBAL")],
         )
+
+
+    def test_show_all_groups_lists_ctrl_alt_and_shift_sections(self) -> None:
+        self.config.shortcuts["CODE.EXE"]["Alt"] = {"F": "File"}
+        self.config.shortcuts["CODE.EXE"]["Shift"] = {"TAB": "Previous"}
+
+        self.controller.show_all_groups()
+
+        self.assertTrue(self.hud.visible)
+        self.assertEqual(
+            [modifier for modifier, _entries in self.hud.sections_rendered],
+            ["Ctrl", "Alt", "Shift"],
+        )
+        self.assertEqual(self.hud.sections_rendered[0][1][0].key, "S")
+        # The header names the foreground app, not the DEFAULT fallback layer.
+        self.assertTrue(self.hud.sections_header.endswith("· All shortcuts"))
+        self.assertNotIn("DEFAULT", self.hud.sections_header)
+
+    def test_show_all_groups_skips_groups_without_rows(self) -> None:
+        self.controller.show_all_groups()
+
+        self.assertEqual(
+            [modifier for modifier, _entries in self.hud.sections_rendered],
+            ["Ctrl"],
+        )
+
+    def test_show_all_groups_shows_nothing_when_every_group_is_empty(self) -> None:
+        self.config.shortcuts = {"DEFAULT": {}}
+
+        self.controller.show_all_groups()
+
+        self.assertFalse(self.hud.visible)
+        self.assertEqual(self.hud.sections_rendered, [])
+
+    def test_show_all_groups_survives_its_own_chord_release(self) -> None:
+        self.controller.show_all_groups()
+
+        self.controller.on_modifiers_changed(set())
+
+        self.assertTrue(self.controller._sections_active)
+        self.assertTrue(self.hud.visible)
+
+    def test_modifier_hold_after_grace_replaces_the_sections_view(self) -> None:
+        self.controller.show_all_groups()
+        self.controller._sections_grace_until = 0.0
+
+        self.controller.on_modifiers_changed({"ctrl"})
+
+        self.assertFalse(self.controller._sections_active)
+        self.assertTrue(wait_until(lambda: bool(self.hud.rendered)))
+
+    def test_escape_dismisses_the_sections_view(self) -> None:
+        self.controller.show_all_groups()
+
+        self.controller.on_key_event("esc", "down")
+
+        self.assertFalse(self.controller._sections_active)
+        self.assertFalse(self.hud.visible)
 
 
 if __name__ == "__main__":

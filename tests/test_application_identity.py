@@ -157,7 +157,7 @@ class ApplicationIdentityRuntimeTests(unittest.TestCase):
         self.assertEqual(class_reads, [101, 202, 303, 404])
         self.assertEqual(self.worker.requests, [])
 
-    def test_wps_pending_fails_closed_to_global_only_profile(self) -> None:
+    def test_wps_pending_falls_back_to_default_and_global_profile(self) -> None:
         self.runtime.on_foreground_changed(123, "wps.exe")
         self.assertTrue(self.runtime.identity_pending)
         self.assertEqual(self.runtime.current_app_name, WPS_UNKNOWN)
@@ -168,7 +168,10 @@ class ApplicationIdentityRuntimeTests(unittest.TestCase):
             "GLOBAL": {"Ctrl": {"G": "Global"}},
         }
         entries = resolve_shortcuts(data, self.runtime.current_app_name, "Ctrl")
-        self.assertEqual([(entry.key, entry.source) for entry in entries], [("G", "GLOBAL")])
+        self.assertEqual(
+            [(entry.key, entry.source) for entry in entries],
+            [("D", "DEFAULT"), ("G", "GLOBAL")],
+        )
 
     def test_current_high_result_publishes_shortcut_profile(self) -> None:
         self.runtime.on_foreground_changed(123, "WPS.EXE")

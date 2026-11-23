@@ -331,7 +331,10 @@ class ShortcutLibraryLocalizationTests(unittest.TestCase):
             )
             tracker.set_current(desktop, (vscode,))
             self.assertEqual(dialog.application_combo.currentData(), WINDOWS_DESKTOP)
-            self.assertTrue(dialog.empty_builtin_label.isVisible() or not dialog.empty_builtin_label.isHidden())
+            # The desktop owns its own built-in layer, so it must no longer render
+            # as an empty shell context.
+            self.assertTrue(dialog.empty_builtin_label.isHidden())
+            self.assertGreater(dialog.table.rowCount(), 0)
             dialog.deleteLater()
 
 

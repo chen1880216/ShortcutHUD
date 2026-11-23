@@ -64,6 +64,25 @@ class ShortcutHudPresentationTests(unittest.TestCase):
                 )
         hud.deleteLater()
 
+    def test_all_groups_view_renders_one_header_per_modifier(self) -> None:
+        hud = ShortcutHudWindow()
+        sections = [
+            ("Ctrl", [ShortcutEntry("S", {"en": "Save", "zh": "保存"}, "APP")]),
+            ("Alt", [ShortcutEntry("F", {"en": "File", "zh": "文件"}, "APP")]),
+            ("Shift", []),
+        ]
+
+        hud.set_sections("CODE.EXE", sections, "zh_CN", "CODE.EXE", "全部快捷键")
+
+        self.assertEqual(hud._header_label.text(), "CODE.EXE · 全部快捷键")
+        headers = [
+            label.text()
+            for label in hud._entries_container.findChildren(QLabel)
+            if label.objectName() == "shortcutHudGlobalSectionLabel"
+        ]
+        self.assertEqual(headers, ["Ctrl", "Alt"])
+        hud.deleteLater()
+
     def test_string_description_is_displayed_directly(self) -> None:
         self.assertEqual(select_description_text("Save", "zh_CN"), "Save")
 

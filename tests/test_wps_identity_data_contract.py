@@ -12,6 +12,30 @@ from scripts.wps_identity import (
     WPS_WRITER,
 )
 
+# Curated first rows surface the daily editing keys before the formatting ones.
+_EXPECTED_WRITER_CTRL_KEYS = [
+    "F",
+    "C",
+    "V",
+    "X",
+    "A",
+    "Z",
+    "Y",
+    "S",
+    "P",
+    "N",
+    "O",
+    "W",
+    "B",
+    "I",
+    "U",
+    "H",
+    "K",
+    "Enter",
+    "G",
+    "D",
+]
+
 
 class WpsIdentityDataContractTests(unittest.TestCase):
     @classmethod
@@ -54,7 +78,7 @@ class WpsIdentityDataContractTests(unittest.TestCase):
         self._assert_app_pack(
             WPS_WRITER,
             "Ctrl",
-            ["B", "I", "U", "H", "K", "Enter", "G", "D"],
+            _EXPECTED_WRITER_CTRL_KEYS,
         )
         self._assert_app_pack(
             WPS_WRITER,
@@ -110,7 +134,7 @@ class WpsIdentityDataContractTests(unittest.TestCase):
 
     def test_logical_profiles_do_not_cross_resolve(self) -> None:
         expected_ctrl_keys = {
-            WPS_WRITER: ["B", "I", "U", "H", "K", "Enter", "G", "D"],
+            WPS_WRITER: _EXPECTED_WRITER_CTRL_KEYS,
             WPS_PDF: ["F", "F2", "-", "0", "1", "2"],
             WPS_PRESENTATION: ["G", "K", "Tab", "+", "-", "0", "H", "F"],
         }

@@ -33,7 +33,13 @@ RESERVED_USER_IDENTITIES = frozenset(
         "WPS_UNKNOWN",
     }
 )
-_GLOBAL_ONLY_IDENTITIES = frozenset({"WINDOWS_SHELL", "SHELL_DESKTOP", "WPS_UNKNOWN"})
+GLOBAL_ONLY_IDENTITIES = frozenset({"WINDOWS_SHELL"})
+# Logical identities that can never own a user profile but must still show
+# something: they use their own built-in layer when present and otherwise fall
+# back to DEFAULT, so the Quick HUD is never blank for them.
+DEFAULT_FALLBACK_IDENTITIES = frozenset({"SHELL_DESKTOP", "WPS_UNKNOWN"})
+_GLOBAL_ONLY_IDENTITIES = GLOBAL_ONLY_IDENTITIES
+_DEFAULT_FALLBACK_IDENTITIES = DEFAULT_FALLBACK_IDENTITIES
 
 
 @dataclass(frozen=True, slots=True)
@@ -223,7 +229,9 @@ def resolve_shortcuts(
     A user profile overlays, rather than replaces, a matching built-in APP.
     A user-only profile is itself a known application and therefore never falls
     back to DEFAULT, except when its only state is stale APP suppression.
-    WINDOWS_SHELL and WPS_UNKNOWN remain GLOBAL-only. Earlier layers win
+    WINDOWS_SHELL remains GLOBAL-only; SHELL_DESKTOP and WPS_UNKNOWN use their
+    own built-in layer when configured and fall back to DEFAULT otherwise.
+    Earlier layers win
     case-insensitive key conflicts and insertion order is preserved within each
     layer. Shortcut keys remain opaque display strings.
     ``NoModifier`` is outside this Phase 1 modifier-triggered resolver contract.
@@ -245,7 +253,23 @@ def resolve_shortcuts(
     layers: list[tuple[Mapping[str, object] | None, ShortcutSource]] = []
     user_profile: Mapping[str, object] | None = None
 
-    if application_id not in _GLOBAL_ONLY_IDENTITIES:
+    if application_id in _DEFAULT_FALLBACK_IDENTITIES:
+        # Logical shell/WPS identities never own user profiles. Prefer their own
+        # built-in layer and otherwise fall back to DEFAULT so generic editing
+        # rows still appear (an empty HUD is never useful).
+        has_own_entries = application_layer is not None and any(
+            _iter_layer_shortcuts(application_layer, canonical_modifier)
+        )
+        if has_own_entries:
+            layers.append((application_layer, "APP"))
+        else:
+            layers.append(
+                (
+                    _find_reserved_layer(shortcut_data, _DEFAULT_LAYER),
+                    "DEFAULT",
+                )
+            )
+    elif application_id not in _GLOBAL_ONLY_IDENTITIES:
         user_profile = _find_user_profile(user_profiles, foreground_executable)
         if (
             user_profile is not None

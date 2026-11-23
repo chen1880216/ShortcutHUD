@@ -35,6 +35,39 @@ class HudEntryLimitTests(unittest.TestCase):
             DEFAULT_HUD_ENTRY_LIMIT,
         )
 
+    def test_netcatty_groups_show_every_row(self) -> None:
+        self.assertEqual(
+            get_hud_entry_limit(r"C:\Program Files\Netcatty\Netcatty.exe", "ctrl"),
+            27,
+        )
+        self.assertEqual(get_hud_entry_limit("netcatty.exe", "Ctrl+Shift"), 15)
+        self.assertEqual(
+            get_hud_entry_limit("NETCATTY.EXE", "Alt"),
+            DEFAULT_HUD_ENTRY_LIMIT,
+        )
+
+    def test_show_all_returns_no_limit(self) -> None:
+        for application_name, modifier in (
+            ("WINWORD.EXE", "Ctrl"),
+            ("NETCATTY.EXE", "Ctrl"),
+            ("MSEDGE.EXE", "Ctrl"),
+            ("UNKNOWN.EXE", "Alt"),
+        ):
+            with self.subTest(application_name=application_name):
+                self.assertIsNone(
+                    get_hud_entry_limit(
+                        application_name,
+                        modifier,
+                        show_all=True,
+                    )
+                )
+
+    def test_show_all_is_off_by_default(self) -> None:
+        self.assertEqual(
+            get_hud_entry_limit("WINWORD.EXE", "Ctrl"),
+            DEFAULT_HUD_ENTRY_LIMIT,
+        )
+
 
 class HudEntryLimitPresentationTests(unittest.TestCase):
     @classmethod
@@ -93,6 +126,32 @@ class HudEntryLimitPresentationTests(unittest.TestCase):
                     + ["Tab", "F4"],
                 )
                 hud.deleteLater()
+
+
+    def test_netcatty_renders_every_configured_row(self) -> None:
+        entries = [
+            ShortcutEntry(str(index), f"Action {index}", "APP")
+            for index in range(40)
+        ]
+
+        for modifier, expected_rows in (("Ctrl", 27), ("Ctrl+Shift", 15)):
+            with self.subTest(modifier=modifier):
+                hud = ShortcutHudWindow()
+                hud.set_entries("NETCATTY.EXE", modifier, entries, "en_US")
+                self.assertEqual(hud._entries_layout.count(), expected_rows)
+                hud.deleteLater()
+
+    def test_show_all_renders_every_entry(self) -> None:
+        entries = [
+            ShortcutEntry(str(index), f"Action {index}", "APP")
+            for index in range(12)
+        ]
+
+        hud = ShortcutHudWindow()
+        hud.set_entries("WINWORD.EXE", "Ctrl", entries, "en_US", show_all=True)
+
+        self.assertEqual(hud._entries_layout.count(), 12)
+        hud.deleteLater()
 
 
 if __name__ == "__main__":

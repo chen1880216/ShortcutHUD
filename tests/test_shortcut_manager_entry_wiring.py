@@ -185,6 +185,8 @@ class ShortcutManagerEntryWiringTests(unittest.TestCase):
             open_about_dialog=no_op,
             toggle_full_guide=no_op,
             open_full_guide_settings=no_op,
+            hud_controller=Mock(),
+            open_all_shortcuts_hotkey_settings=no_op,
             quit_application=no_op,
         )
 
@@ -218,6 +220,8 @@ class ShortcutManagerEntryWiringTests(unittest.TestCase):
             open_about_dialog=lambda: None,
             toggle_full_guide=lambda: None,
             open_full_guide_settings=lambda: None,
+            hud_controller=Mock(),
+            open_all_shortcuts_hotkey_settings=lambda: None,
             quit_application=lambda: None,
         )
 

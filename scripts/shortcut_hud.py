@@ -24,7 +24,7 @@ from .shortcut_resolver import ShortcutEntry
 
 def select_visible_entry_groups(
     entries: Sequence[ShortcutEntry],
-    local_limit: int,
+    local_limit: int | None,
 ) -> tuple[list[ShortcutEntry], list[ShortcutEntry]]:
     """Return USER rows plus limited built-ins and all surviving GLOBAL rows.
 
@@ -32,12 +32,15 @@ def select_visible_entry_groups(
     presentation boundary. Every surviving USER_APP row remains visible.
     APP/DEFAULT rows use the app-specific local budget independently, while
     GLOBAL rows remain pinned after local content and never consume that budget.
+    ``local_limit=None`` disables the local budget so every row is shown.
     """
 
     user_entries = [entry for entry in entries if entry.source == "USER_APP"]
     built_in_entries = [
         entry for entry in entries if entry.source in {"APP", "DEFAULT"}
-    ][:max(0, local_limit)]
+    ]
+    if local_limit is not None:
+        built_in_entries = built_in_entries[: max(0, local_limit)]
     global_entries = [
         entry for entry in entries if entry.source == "GLOBAL"
     ]
@@ -49,6 +52,7 @@ class ShortcutHudWindow(QWidget):
 
     WINDOW_WIDTH = 360
     SCREEN_MARGIN = 20
+    MINIMUM_HEIGHT = 120
 
     def __init__(
         self,
@@ -159,10 +163,16 @@ class ShortcutHudWindow(QWidget):
         entries: Sequence[ShortcutEntry],
         language: str | None,
         application_display_name: str | None = None,
+        *,
+        show_all: bool = False,
     ) -> None:
         """Replace the current rows while preserving resolver insertion order."""
 
-        entry_limit = get_hud_entry_limit(application_name, modifier_combination)
+        entry_limit = get_hud_entry_limit(
+            application_name,
+            modifier_combination,
+            show_all=show_all,
+        )
         local_entries, global_entries = select_visible_entry_groups(
             entries,
             entry_limit,
@@ -187,6 +197,54 @@ class ShortcutHudWindow(QWidget):
             self._add_global_section()
         for entry in global_entries:
             self._add_entry_row(entry, language)
+
+        self._finalize_size_and_position()
+        self._layout_update_timer.start()
+
+    def set_sections(
+        self,
+        application_name: str,
+        sections: Sequence[tuple[str, Sequence[ShortcutEntry]]],
+        language: str | None,
+        application_display_name: str | None = None,
+        header_suffix: str = "",
+        *,
+        show_all: bool = False,
+    ) -> None:
+        """Render one headed section per modifier group (the all-groups view).
+
+        Each section keeps the resolver order and its own local budget, so the
+        Ctrl, Alt and Shift groups never borrow rows from one another.
+        """
+
+        display_name = application_display_name or get_application_display_name(
+            application_name, self._user_display_names
+        )
+        if display_name and header_suffix:
+            header_text = f"{display_name} · {header_suffix}"
+        else:
+            header_text = display_name or header_suffix
+        self._header_label.setText(header_text)
+        self._clear_entry_rows()
+
+        for modifier, entries in sections:
+            entry_limit = get_hud_entry_limit(
+                application_name,
+                modifier,
+                show_all=show_all,
+            )
+            local_entries, global_entries = select_visible_entry_groups(
+                entries, entry_limit
+            )
+            if not local_entries and not global_entries:
+                continue
+            self._add_section_header(modifier)
+            for entry in local_entries:
+                self._add_entry_row(entry, language)
+            if local_entries and global_entries:
+                self._add_section_header("全局")
+            for entry in global_entries:
+                self._add_entry_row(entry, language)
 
         self._finalize_size_and_position()
         self._layout_update_timer.start()
@@ -223,13 +281,16 @@ class ShortcutHudWindow(QWidget):
         self._entries_layout.addWidget(row)
 
     def _add_global_section(self) -> None:
+        self._add_section_header("全局")
+
+    def _add_section_header(self, text: str) -> None:
         section = QWidget(self._entries_container)
         section.setObjectName("shortcutHudGlobalSection")
         section_layout = QHBoxLayout(section)
         section_layout.setContentsMargins(0, 3, 0, 1)
         section_layout.setSpacing(8)
 
-        label = QLabel("全局", section)
+        label = QLabel(text, section)
         label.setObjectName("shortcutHudGlobalSectionLabel")
         label.setFocusPolicy(Qt.NoFocus)
 
@@ -274,8 +335,22 @@ class ShortcutHudWindow(QWidget):
         self._outer_layout.invalidate()
         self._outer_layout.activate()
         target_height = self._outer_layout.totalSizeHint().height()
+        target_height = self._clamp_height_to_screen(target_height)
         self.resize(self.width(), target_height)
         self._position_bottom_right()
+
+    def _clamp_height_to_screen(self, height: int) -> int:
+        """Keep a tall all-groups panel on-screen instead of above the top edge."""
+
+        screen = QGuiApplication.primaryScreen()
+        if screen is None:
+            return height
+        available = screen.availableGeometry()
+        maximum = max(
+            self.MINIMUM_HEIGHT,
+            available.height() - 2 * self.SCREEN_MARGIN,
+        )
+        return min(height, maximum)
 
     def _position_bottom_right(self) -> None:
         screen = QGuiApplication.primaryScreen()

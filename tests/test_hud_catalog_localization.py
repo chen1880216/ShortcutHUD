@@ -51,7 +51,7 @@ class _Hud:
     def show_hud(self) -> None:
         pass
 
-    def set_entries(self, application_name, modifier, entries, language, display_name=None) -> None:
+    def set_entries(self, application_name, modifier, entries, language, display_name=None, *, show_all=False) -> None:
         self.rendered = (application_name, modifier, entries, language, display_name)
 
 

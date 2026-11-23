@@ -99,7 +99,9 @@ class ApplicationDescriptorFactory:
     def _metadata(self, path: str) -> ApplicationMetadata:
         try:
             raw = self._metadata_provider(path)
-        except (OSError, ValueError, TypeError):
+        except Exception:  # noqa: BLE001 - metadata is cosmetic, never fatal
+            # pywintypes.error is not an OSError, and an executable without a
+            # version-resource section must not break foreground detection.
             raw = None
         if isinstance(raw, ApplicationMetadata):
             return raw
@@ -115,8 +117,14 @@ def read_windows_version_metadata(path: str) -> ApplicationMetadata:
     """Read optional version-resource labels for a single executable safely."""
 
     try:
+        import pywintypes
         import win32api
+    except ImportError:
+        return ApplicationMetadata()
 
+    # pywintypes.error (e.g. 1812, no version-resource section) is not an
+    # OSError, so it has to be named explicitly here.
+    try:
         translations = win32api.GetFileVersionInfo(path, r"\\VarFileInfo\\Translation")
         pairs = translations if isinstance(translations, list) else []
         for language, code_page in pairs:
@@ -125,7 +133,7 @@ def read_windows_version_metadata(path: str) -> ApplicationMetadata:
             description = _clean_text(win32api.GetFileVersionInfo(path, root + "FileDescription"))
             if product or description:
                 return ApplicationMetadata(product, description)
-    except (ImportError, OSError, ValueError, TypeError):
+    except Exception:  # noqa: BLE001 - missing/broken resources are expected
         pass
     return ApplicationMetadata()
 

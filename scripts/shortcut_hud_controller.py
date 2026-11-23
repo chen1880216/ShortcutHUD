@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Mapping
 from copy import deepcopy
 from typing import Protocol
@@ -10,6 +11,10 @@ from PySide6.QtCore import QObject, QTimer, Slot
 
 from .application_descriptor import ApplicationDescriptorFactory
 from .catalog_application_registry import CatalogApplicationRegistry
+from .hud_entry_limits import (
+    DEFAULT_SHOW_ALL_SHORTCUTS,
+    SHOW_ALL_SHORTCUTS_SETTING,
+)
 from .modifier_state import canonicalize_modifier_state
 from .shortcut_catalog import ShortcutCatalog
 from .shortcut_catalog_resolver import CatalogShortcutResolver
@@ -42,6 +47,19 @@ class _HudView(Protocol):
         entries: list[ShortcutEntry],
         language: str | None,
         application_display_name: str | None = None,
+        *,
+        show_all: bool = False,
+    ) -> None: ...
+
+    def set_sections(
+        self,
+        application_name: str,
+        sections: list[tuple[str, list[ShortcutEntry]]],
+        language: str | None,
+        application_display_name: str | None = None,
+        header_suffix: str = "",
+        *,
+        show_all: bool = False,
     ) -> None: ...
 
 
@@ -56,6 +74,10 @@ class ShortcutHudController(QObject):
 
     DEFAULT_SHOW_DELAY_MS = 150
     WIN_ONLY_SHOW_DELAY_MS = 300
+    # The explicit all-groups command must survive the release of its own
+    # chord: modifier events arriving inside this window are not new holds.
+    SECTIONS_GRACE_SECONDS = 0.35
+    ALL_GROUPS_MODIFIERS = ("Ctrl", "Alt", "Shift")
     _MODIFIER_KEY_NAMES = frozenset({"ctrl", "alt", "shift", "win"})
 
     def __init__(
@@ -88,6 +110,8 @@ class ShortcutHudController(QObject):
         self._win_only_show_delay_ms = win_only_show_delay_ms
         self._identity_delay_elapsed = False
         self._suppression_rearm_required = False
+        self._sections_active = False
+        self._sections_grace_until = 0.0
 
         self._guide_active = False
 
@@ -103,6 +127,11 @@ class ShortcutHudController(QObject):
     @Slot(set)
     def on_modifiers_changed(self, modifiers: set[str]) -> None:
         """Schedule, update, or hide the HUD for the latest logical state."""
+
+        if self._sections_active:
+            if time.monotonic() < self._sections_grace_until:
+                return
+            self._end_sections()
 
         self._identity_delay_elapsed = False
         win_held = self._contains_win_modifier(modifiers)
@@ -124,6 +153,16 @@ class ShortcutHudController(QObject):
         """Hide an active Win discovery HUD once real shortcut execution starts."""
 
         if (
+            self._sections_active
+            and isinstance(key_name, str)
+            and isinstance(event_type, str)
+            and event_type.casefold() == "down"
+            and key_name.casefold() == "esc"
+        ):
+            self._end_sections()
+            return
+
+        if (
             not self._win_discovery_active
             or not isinstance(key_name, str)
             or not isinstance(event_type, str)
@@ -135,6 +174,43 @@ class ShortcutHudController(QObject):
         self._win_execution_seen = True
         self._cancel_and_hide()
 
+    @Slot()
+    def show_all_groups(self) -> None:
+        """List the Ctrl, Alt and Shift groups of the frontmost app together.
+
+        This is the explicit-command counterpart of the passive HUD: it does
+        not depend on holding a modifier, and it stays up until the user
+        presses a modifier again or dismisses it with Esc.
+        """
+
+        if not self._policy_allows_quick_hud():
+            return
+
+        sections = self._resolve_all_sections()
+        if not sections:
+            self._end_sections()
+            return
+
+        self._show_timer.stop()
+        self._identity_delay_elapsed = False
+        self._sections_active = True
+        self._sections_grace_until = (
+            time.monotonic() + self.SECTIONS_GRACE_SECONDS
+        )
+        app_name = self._foreground_monitor.current_app_name
+        language = self._language()
+        self._hud_window.set_sections(
+            self._application_key(),
+            sections,
+            language,
+            self._application_display_name(
+                self._current_catalog(), app_name, language
+            ),
+            self.tr("All shortcuts"),
+            show_all=self._show_all_shortcuts(),
+        )
+        self._hud_window.show_hud()
+
     @Slot(str)
     def on_active_app_changed(self, _application_name: str) -> None:
         """Refresh from ForegroundMonitor's already-maintained current state."""
@@ -144,6 +220,9 @@ class ShortcutHudController(QObject):
 
     def refresh_current_state(self) -> None:
         """Re-resolve the latest state without querying foreground Windows."""
+
+        if self._sections_active:
+            return
 
         if not self._quick_hud_is_allowed():
             self._cancel_and_hide()
@@ -194,6 +273,8 @@ class ShortcutHudController(QObject):
 
         self._current_modifier = None
         self._suppression_rearm_required = False
+        self._sections_active = False
+        self._sections_grace_until = 0.0
         self._win_modifier_held = False
         self._reset_win_discovery_state()
         self._cancel_and_hide()
@@ -219,6 +300,8 @@ class ShortcutHudController(QObject):
     def set_guide_active(self, active: bool) -> None:
         """Suspend passive presentation until a fresh post-Guide key hold."""
         self._guide_active = active
+        self._sections_active = False
+        self._sections_grace_until = 0.0
         self._suppression_rearm_required = self._current_modifier is not None
         self._reset_win_discovery_state()
         self._cancel_and_hide()
@@ -265,16 +348,51 @@ class ShortcutHudController(QObject):
             self._language(),
         )
 
+    def _resolve_all_sections(self) -> list[tuple[str, list[ShortcutEntry]]]:
+        resolver = CatalogShortcutResolver(self._current_catalog())
+        sections: list[tuple[str, list[ShortcutEntry]]] = []
+        for modifier in self.ALL_GROUPS_MODIFIERS:
+            entries = resolver.resolve(
+                self._foreground_monitor.current_app_name,
+                modifier,
+                self._user_profiles,
+                self._selection_store,
+                self._language(),
+            )
+            if entries:
+                sections.append((modifier, entries))
+        return sections
+
+    def _application_key(self) -> str:
+        app_name = self._foreground_monitor.current_app_name
+        return app_name.upper() if app_name else "DEFAULT"
+
     def _render(self, entries: list[ShortcutEntry]) -> None:
         app_name = self._foreground_monitor.current_app_name
         language = self._language()
         self._hud_window.set_entries(
-            app_name.upper() if app_name else "DEFAULT",
+            self._application_key(),
             self._current_modifier or "",
             entries,
             language,
             self._application_display_name(self._current_catalog(), app_name, language),
+            show_all=self._show_all_shortcuts(),
         )
+
+    def _end_sections(self) -> None:
+        """Drop the all-groups panel and require a fresh hold to show it again."""
+
+        self._sections_active = False
+        self._sections_grace_until = 0.0
+        self._suppression_rearm_required = self._current_modifier is not None
+        self._cancel_and_hide()
+
+    def _show_all_shortcuts(self) -> bool:
+        value = self._config_manager.get_setting(
+            SHOW_ALL_SHORTCUTS_SETTING,
+            DEFAULT_SHOW_ALL_SHORTCUTS,
+        )
+        return value if isinstance(value, bool) else DEFAULT_SHOW_ALL_SHORTCUTS
 
     def _current_catalog(self) -> ShortcutCatalog:
         catalog_getter = getattr(self._config_manager, "get_shortcut_catalog", None)

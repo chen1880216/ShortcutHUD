@@ -351,6 +351,12 @@
         <translation>管理快捷键...</translation>
     </message>
     <message>
+        <location filename="../scripts/settings_dialog.py" line="345"/>
+        <location filename="../scripts/settings_dialog.py" line="612"/>
+        <source>Show every shortcut for the app (no row limit)</source>
+        <translation>显示该应用的全部快捷键（不限行数）</translation>
+    </message>
+    <message>
         <location filename="../scripts/settings_dialog.py" line="349"/>
         <location filename="../scripts/settings_dialog.py" line="583"/>
         <source>Game Guard</source>
@@ -919,6 +925,12 @@ Multi-step/chord shortcuts will be supported in a future version.</source>
     <message><source>Full Guide shortcut...</source><translation>指南唤起快捷键…</translation></message>
     <message><source>Full Guide shortcut unavailable</source><translation>指南唤起快捷键不可用</translation></message>
     <message><source>Choose another shortcut in Settings &gt; Full Guide shortcut.</source><translation>请在“设置 → 指南唤起快捷键”中选择其他组合。</translation></message>
+    <message><source>Show All Shortcuts (Ctrl/Alt/Shift)</source><translation>显示全部快捷键（Ctrl/Alt/Shift）</translation></message>
+    <message><source>All Shortcuts shortcut...</source><translation>全部快捷键唤起…</translation></message>
+    <message><source>All Shortcuts shortcut unavailable</source><translation>全部快捷键唤起不可用</translation></message>
+    <message><source>Choose another shortcut from the tray menu.</source><translation>请从托盘菜单中选择其他组合。</translation></message>
+    <message><source>All Shortcuts shortcut</source><translation>全部快捷键唤起</translation></message>
+    <message><source>Press once to list every Ctrl, Alt and Shift shortcut of the current app. Press a modifier or Esc to close it.</source><translation>按一次即列出当前软件的 Ctrl、Alt、Shift 全部快捷键；按任意修饰键或 Esc 关闭。</translation></message>
     <message>
         <location filename="../main.py" line="343"/>
         <source>Game Mode</source>
@@ -1239,5 +1251,9 @@ Custom shortcuts and the display name will not be changed.</source>
     <message><source>Use Ctrl, Alt or Shift with a letter, number, F-key (except F12), or navigation key. Windows-reserved shortcuts are unavailable.</source><translation>使用 Ctrl、Alt 或 Shift 加字母、数字、功能键（F12 除外）或导航键。Windows 保留组合不可用。</translation></message>
     <message><source>Shortcut unavailable. Choose another combination.</source><translation>快捷键不可用或已被占用，请选择其他组合。</translation></message>
     <message><source>Use default: %1</source><translation>使用默认值：%1</translation></message>
+</context>
+<context>
+    <name>ShortcutHudController</name>
+    <message><source>All shortcuts</source><translation>全部快捷键</translation></message>
 </context>
 </TS>

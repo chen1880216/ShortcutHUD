@@ -53,7 +53,13 @@ from scripts.win_discovery_proxy import WinDiscoveryProxy
 from scripts.settings_dialog import SettingsDialog, AboutDialog
 from scripts.full_guide_context import WindowsGuideContext
 from scripts.full_guide_controller import FullGuideController
-from scripts.full_guide_hotkey import FullGuideHotkey, DEFAULT_GUIDE_HOTKEY, GUIDE_HOTKEY_SETTING
+from scripts.full_guide_hotkey import (
+    ALL_SHORTCUTS_HOTKEY_SETTING,
+    DEFAULT_ALL_SHORTCUTS_HOTKEY,
+    DEFAULT_GUIDE_HOTKEY,
+    GUIDE_HOTKEY_SETTING,
+    FullGuideHotkey,
+)
 from scripts.full_guide_input import GuideWinInputService
 from scripts.full_guide_window import FullGuideWindow
 
@@ -196,11 +202,20 @@ class ShortcutOverlayApplication(QApplication):
         )
         self.full_guide_hotkey = FullGuideHotkey(self, parent=self)
         self.full_guide_hotkey.activated.connect(self.toggle_full_guide)
+        self.all_shortcuts_hotkey = FullGuideHotkey(
+            self,
+            parent=self,
+            identifier_candidates=(0x534A, 0x534B),
+        )
+        self.all_shortcuts_hotkey.activated.connect(
+            self.hud_controller.show_all_groups
+        )
         self.full_guide_window.center_requested.connect(
             lambda: QTimer.singleShot(0, self.open_shortcut_center_dialog)
         )
         self.game_guard_runtime.suppression_changed.connect(self.full_guide_controller.on_suppression_changed)
         self.aboutToQuit.connect(self.full_guide_hotkey.close)
+        self.aboutToQuit.connect(self.all_shortcuts_hotkey.close)
         self.aboutToQuit.connect(self.full_guide_input.stop)
         self.aboutToQuit.connect(self.full_guide_controller.close)
 
@@ -211,6 +226,13 @@ class ShortcutOverlayApplication(QApplication):
         self._update_tray_icon_ui()         # Populate its UI elements.
         if not self.full_guide_hotkey.configure(self.config_mgr.get_setting(GUIDE_HOTKEY_SETTING, DEFAULT_GUIDE_HOTKEY)):
             QTimer.singleShot(0, self._notify_guide_hotkey_conflict)
+        if not self.all_shortcuts_hotkey.configure(
+            self.config_mgr.get_setting(
+                ALL_SHORTCUTS_HOTKEY_SETTING,
+                DEFAULT_ALL_SHORTCUTS_HOTKEY,
+            )
+        ):
+            QTimer.singleShot(0, self._notify_all_shortcuts_hotkey_conflict)
 
         self.aboutToQuit.connect(self.overlay_window.save_geometry_on_quit) # Save overlay geometry on quit.
         
@@ -396,6 +418,19 @@ class ShortcutOverlayApplication(QApplication):
         guide_settings_action.triggered.connect(self.open_full_guide_settings)
         new_menu.addAction(guide_settings_action)
 
+        all_shortcuts_action = QAction(
+            self.tr("Show All Shortcuts (Ctrl/Alt/Shift)"), new_menu
+        )
+        all_shortcuts_action.triggered.connect(self.hud_controller.show_all_groups)
+        new_menu.addAction(all_shortcuts_action)
+        all_shortcuts_settings_action = QAction(
+            self.tr("All Shortcuts shortcut..."), new_menu
+        )
+        all_shortcuts_settings_action.triggered.connect(
+            self.open_all_shortcuts_hotkey_settings
+        )
+        new_menu.addAction(all_shortcuts_settings_action)
+
         show_hide_action: QAction = QAction(self.tr("Show/Hide Overlay"), new_menu)
         show_hide_action.triggered.connect(self.toggle_overlay_window)
         new_menu.addAction(show_hide_action)
@@ -491,6 +526,47 @@ class ShortcutOverlayApplication(QApplication):
         if not self.full_guide_hotkey.configure(value):
             return False, self.full_guide_hotkey.last_error
         self.config_mgr.update_settings({GUIDE_HOTKEY_SETTING: self.full_guide_hotkey.spec.text})
+        return True, ""
+
+    def _notify_all_shortcuts_hotkey_conflict(self) -> None:
+        self.tray_icon.showMessage(
+            self.tr("All Shortcuts shortcut unavailable"),
+            self.tr("Choose another shortcut from the tray menu."),
+            QSystemTrayIcon.MessageIcon.Warning,
+        )
+
+    def open_all_shortcuts_hotkey_settings(self, _checked=False, parent=None) -> None:
+        from scripts.full_guide_settings import FullGuideSettingsDialog
+
+        service = self.all_shortcuts_hotkey
+        current = (
+            service.spec.text
+            if service.spec
+            else self.config_mgr.get_setting(
+                ALL_SHORTCUTS_HOTKEY_SETTING,
+                DEFAULT_ALL_SHORTCUTS_HOTKEY,
+            )
+        )
+        dialog = FullGuideSettingsDialog(
+            current,
+            self.apply_all_shortcuts_hotkey,
+            service.last_error,
+            parent or self.overlay_window,
+            title=self.tr("All Shortcuts shortcut"),
+            description=self.tr(
+                "Press once to list every Ctrl, Alt and Shift shortcut of the "
+                "current app. Press a modifier or Esc to close it."
+            ),
+            default_hotkey=DEFAULT_ALL_SHORTCUTS_HOTKEY,
+        )
+        dialog.exec()
+
+    def apply_all_shortcuts_hotkey(self, value: str) -> tuple[bool, str]:
+        if not self.all_shortcuts_hotkey.configure(value):
+            return False, self.all_shortcuts_hotkey.last_error
+        self.config_mgr.update_settings(
+            {ALL_SHORTCUTS_HOTKEY_SETTING: self.all_shortcuts_hotkey.spec.text}
+        )
         return True, ""
 
     def open_user_shortcut_manager_dialog(self, parent=None) -> None:

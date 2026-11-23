@@ -35,6 +35,10 @@ from .game_guard_settings import (
     normalize_excluded_application,
     normalize_excluded_applications,
 )
+from .hud_entry_limits import (
+    DEFAULT_SHOW_ALL_SHORTCUTS,
+    SHOW_ALL_SHORTCUTS_SETTING,
+)
 
 try:
     from . import __version__
@@ -139,6 +143,7 @@ class SettingsDialog(QDialog):
         self.custom_apps_button: Optional[QPushButton] = None
         self._custom_apps_description: Optional[QLabel] = None
         self.fullscreen_suppression_checkbox: Optional[QCheckBox] = None
+        self.show_all_shortcuts_checkbox: Optional[QCheckBox] = None
         self.excluded_applications_list: Optional[QListWidget] = None
         self.add_current_app_button: Optional[QPushButton] = None
         self.remove_excluded_app_button: Optional[QPushButton] = None
@@ -176,6 +181,10 @@ class SettingsDialog(QDialog):
             )
         if self.fullscreen_suppression_checkbox:
             self.fullscreen_suppression_checkbox.toggled.connect(
+                self._on_setting_changed_by_user
+            )
+        if self.show_all_shortcuts_checkbox:
+            self.show_all_shortcuts_checkbox.toggled.connect(
                 self._on_setting_changed_by_user
             )
         # Custom color changes are handled within _select_color.
@@ -345,6 +354,20 @@ class SettingsDialog(QDialog):
         self.guide_shortcut_button = QPushButton(self.tr("Full Guide shortcut..."), self._custom_apps_group_box)
         self.guide_shortcut_button.clicked.connect(self.full_guide_settings_requested.emit)
         layout.addWidget(self.guide_shortcut_button)
+        show_all_enabled = self._initial_settings.get(
+            SHOW_ALL_SHORTCUTS_SETTING,
+            DEFAULT_SHOW_ALL_SHORTCUTS,
+        )
+        self.show_all_shortcuts_checkbox = QCheckBox(
+            self.tr("Show every shortcut for the app (no row limit)"),
+            self._custom_apps_group_box,
+        )
+        self.show_all_shortcuts_checkbox.setChecked(
+            show_all_enabled
+            if isinstance(show_all_enabled, bool)
+            else DEFAULT_SHOW_ALL_SHORTCUTS
+        )
+        layout.addWidget(self.show_all_shortcuts_checkbox)
         self._main_layout.addWidget(self._custom_apps_group_box)
 
     def _setup_game_guard_group(self) -> None:
@@ -562,6 +585,10 @@ class SettingsDialog(QDialog):
                 if self.excluded_applications_list
                 else []
             ),
+            SHOW_ALL_SHORTCUTS_SETTING: bool(
+                self.show_all_shortcuts_checkbox
+                and self.show_all_shortcuts_checkbox.isChecked()
+            ),
         }
 
     def changeEvent(self, event: QEvent) -> None:
@@ -601,6 +628,10 @@ class SettingsDialog(QDialog):
             self.custom_apps_button.setText(self.tr("Manage Shortcuts..."))
         if self.guide_shortcut_button:
             self.guide_shortcut_button.setText(self.tr("Full Guide shortcut..."))
+        if self.show_all_shortcuts_checkbox:
+            self.show_all_shortcuts_checkbox.setText(
+                self.tr("Show every shortcut for the app (no row limit)")
+            )
         if self.fullscreen_suppression_checkbox:
             self.fullscreen_suppression_checkbox.setText(
                 self.tr("Enable automatic fullscreen Quick HUD suppression (optional)")

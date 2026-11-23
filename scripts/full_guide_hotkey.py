@@ -10,6 +10,10 @@ from PySide6.QtGui import QKeySequence
 
 DEFAULT_GUIDE_HOTKEY = "Ctrl+Shift+F10"
 GUIDE_HOTKEY_SETTING = "full_guide_hotkey"
+# A second explicit command: one press lists the Ctrl, Alt and Shift groups of
+# the frontmost app together, instead of waiting for a modifier hold.
+DEFAULT_ALL_SHORTCUTS_HOTKEY = "Ctrl+Alt+Shift+H"
+ALL_SHORTCUTS_HOTKEY_SETTING = "all_shortcuts_hotkey"
 WM_HOTKEY = 0x0312
 MOD_NOREPEAT = 0x4000
 _MODIFIERS = {"Alt": 1, "Ctrl": 2, "Shift": 4, "Meta": 8}
@@ -89,10 +93,18 @@ class _HotkeyFilter(QAbstractNativeEventFilter):
 class FullGuideHotkey(QObject):
     activated = Signal()
 
-    def __init__(self, application, parent=None, *, backend=None) -> None:
+    def __init__(
+        self,
+        application,
+        parent=None,
+        *,
+        backend=None,
+        identifier_candidates: tuple[int, int] = (0x5348, 0x5349),
+    ) -> None:
         super().__init__(parent)
         self.application = application
         self.backend = backend or WindowsHotkeyBackend()
+        self._identifier_candidates = identifier_candidates
         self.spec: HotkeySpec | None = None
         self.identifier: int | None = None
         self.last_error = ""
@@ -108,7 +120,8 @@ class FullGuideHotkey(QObject):
         if self.spec == spec:
             self.last_error = ""
             return True
-        identifier = 0x5348 if self.identifier != 0x5348 else 0x5349
+        first, second = self._identifier_candidates
+        identifier = second if self.identifier == first else first
         if not self.backend.register(identifier, spec):
             self.last_error = f"RegisterHotKey failed ({self.backend.last_error})"
             return False

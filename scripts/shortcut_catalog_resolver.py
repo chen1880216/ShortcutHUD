@@ -10,13 +10,11 @@ from .modifier_state import normalize_modifier_combination
 from .shortcut_catalog import CatalogEntry, CatalogScope, CatalogTrigger, ShortcutCatalog, select_catalog_text
 from .shortcut_key import normalize_builtin_shortcut_identity
 from .shortcut_resolver import (
+    DEFAULT_FALLBACK_IDENTITIES,
+    GLOBAL_ONLY_IDENTITIES,
     RESERVED_USER_IDENTITIES,
     ShortcutEntry,
     normalize_application_identity,
-)
-
-_GLOBAL_ONLY_IDENTITIES = frozenset(
-    {"WINDOWS_SHELL", "SHELL_DESKTOP", "WPS_UNKNOWN"}
 )
 
 
@@ -48,7 +46,14 @@ class CatalogShortcutResolver:
         if profile is not None and not app_is_known and _profile_is_hidden_only(profile):
             profile = None
         layers: list[tuple[list[CatalogEntry], str]] = []
-        if app_id not in _GLOBAL_ONLY_IDENTITIES:
+        if app_id in DEFAULT_FALLBACK_IDENTITIES:
+            if app_is_known:
+                layers.append((app_entries, "APP"))
+            else:
+                layers.append(
+                    (self._entries_for_scope("DEFAULT", canonical_modifier), "DEFAULT")
+                )
+        elif app_id not in GLOBAL_ONLY_IDENTITIES:
             user_entries = _user_entries(profile, app_id, canonical_modifier)
             if profile is not None:
                 layers.append((user_entries, "USER_APP"))

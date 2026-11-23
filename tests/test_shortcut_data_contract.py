@@ -8,6 +8,7 @@ from scripts.shortcut_resolver import resolve_shortcuts
 _CONFIG_PATH = (
     Path(__file__).resolve().parents[1] / "config" / "shortcuts.json"
 )
+_SYSTEM_LAYERS = frozenset({"GLOBAL", "DEFAULT"})
 _EXPECTED_GLOBAL_WIN_KEYS = ["R", "E", "V", "D", "I", "S", "Tab", "X"]
 _EXPECTED_GLOBAL_WIN = {
     "R": {"en": "Run", "zh": "运行"},
@@ -178,13 +179,23 @@ class ShortcutDataContractTests(unittest.TestCase):
                         ensure_ascii=False,
                     ).casefold()
 
+                    if modifier_tokens == {"win", "shift"}:
+                        self.assertNotEqual(key_identity, "s", location)
+                    # The guard exists to keep Windows' own snipping bindings out
+                    # of the shared layers (they work everywhere, so listing them
+                    # per app only takes rows and can mislead once the user has
+                    # remapped PrtSc to another tool). Applications whose whole
+                    # purpose is screen capture legitimately name their own
+                    # actions this way, so these checks stop at the system
+                    # layers; Win+Shift+S stays forbidden everywhere because it
+                    # always competes with the OS snipping overlay.
+                    if application not in _SYSTEM_LAYERS:
+                        continue
                     self.assertNotIn(
                         key_identity,
                         forbidden_keys,
                         location,
                     )
-                    if modifier_tokens == {"win", "shift"}:
-                        self.assertNotEqual(key_identity, "s", location)
                     for forbidden in forbidden_descriptions:
                         self.assertNotIn(
                             forbidden,
@@ -262,24 +273,60 @@ class ShortcutDataContractTests(unittest.TestCase):
         self.assertEqual(ctrl_entries, [])
 
 
-    def test_wps_unknown_resolves_each_configured_global_group_only(self) -> None:
-        expected_keys = {
-            "Win": _EXPECTED_GLOBAL_WIN_KEYS,
-            "Alt": ["Tab", "F4"],
-            "Ctrl+Shift": ["Esc"],
-        }
-
-        for modifier, keys in expected_keys.items():
+    def test_wps_unknown_falls_back_to_default_then_global_layers(self) -> None:
+        for modifier in ("Win", "Alt", "Ctrl", "Ctrl+Shift"):
             with self.subTest(modifier=modifier):
                 entries = resolve_shortcuts(
                     self.shortcut_data,
                     "WPS_UNKNOWN",
                     modifier,
                 )
-                self.assertEqual([entry.key for entry in entries], keys)
-                self.assertTrue(
-                    all(entry.source == "GLOBAL" for entry in entries)
+                default_keys = list(
+                    self.shortcut_data["DEFAULT"].get(modifier, {})
                 )
+                global_keys = list(
+                    self.shortcut_data["GLOBAL"].get(modifier, {})
+                )
+                self.assertEqual(
+                    [entry.key for entry in entries],
+                    default_keys + global_keys,
+                )
+                self.assertEqual(
+                    [entry.source for entry in entries],
+                    ["DEFAULT"] * len(default_keys)
+                    + ["GLOBAL"] * len(global_keys),
+                )
+
+    def test_wps_unknown_ctrl_is_no_longer_empty(self) -> None:
+        entries = resolve_shortcuts(self.shortcut_data, "WPS_UNKNOWN", "Ctrl")
+
+        self.assertTrue(entries)
+        self.assertEqual(entries[0].source, "DEFAULT")
+
+    def test_desktop_identity_resolves_its_own_layer(self) -> None:
+        entries = resolve_shortcuts(
+            self.shortcut_data,
+            "SHELL_DESKTOP",
+            "Ctrl",
+        )
+
+        self.assertEqual(
+            [entry.key for entry in entries],
+            ["A", "C", "X", "V", "Z", "Y"],
+        )
+        self.assertTrue(all(entry.source == "APP" for entry in entries))
+
+    def test_desktop_identity_does_not_reuse_explorer_windows(self) -> None:
+        entries = resolve_shortcuts(
+            self.shortcut_data,
+            "SHELL_DESKTOP",
+            "Alt",
+        )
+
+        self.assertEqual(
+            [(entry.key, entry.source) for entry in entries],
+            [("Enter", "APP"), ("Tab", "GLOBAL"), ("F4", "GLOBAL")],
+        )
 
 
     def test_unknown_third_party_receives_every_global_group(self) -> None:

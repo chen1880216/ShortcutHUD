@@ -17,6 +17,10 @@ from .game_guard_settings import (
     FULLSCREEN_SUPPRESSION_SETTING,
     normalize_excluded_applications,
 )
+from .hud_entry_limits import (
+    DEFAULT_SHOW_ALL_SHORTCUTS,
+    SHOW_ALL_SHORTCUTS_SETTING,
+)
 from .shortcut_catalog import ShortcutCatalog
 
 # Type aliases for better readability and type hinting, representing
@@ -223,6 +227,7 @@ class ConfigManager:
             "window_height": 280, # Default height
             FULLSCREEN_SUPPRESSION_SETTING: DEFAULT_FULLSCREEN_SUPPRESSION_ENABLED,
             EXCLUDED_APPLICATIONS_SETTING: [],
+            SHOW_ALL_SHORTCUTS_SETTING: DEFAULT_SHOW_ALL_SHORTCUTS,
             # Other settings like window position/size can be added here.
         }
 
@@ -281,6 +286,12 @@ class ConfigManager:
             made_changes_due_to_missing_keys = True
         self.app_settings[EXCLUDED_APPLICATIONS_SETTING] = normalized_exclusions
 
+        if not isinstance(
+            self.app_settings.get(SHOW_ALL_SHORTCUTS_SETTING), bool
+        ):
+            self.app_settings[SHOW_ALL_SHORTCUTS_SETTING] = DEFAULT_SHOW_ALL_SHORTCUTS
+            made_changes_due_to_missing_keys = True
+
         # Save settings if:
         # 1. The file didn't exist.
         # 2. The file existed but was invalid (so defaults were heavily used).
@@ -337,6 +348,11 @@ class ConfigManager:
                 normalize_excluded_applications(
                     normalized_updates[EXCLUDED_APPLICATIONS_SETTING]
                 )
+            )
+        if SHOW_ALL_SHORTCUTS_SETTING in normalized_updates:
+            show_all = normalized_updates[SHOW_ALL_SHORTCUTS_SETTING]
+            normalized_updates[SHOW_ALL_SHORTCUTS_SETTING] = (
+                show_all if isinstance(show_all, bool) else DEFAULT_SHOW_ALL_SHORTCUTS
             )
         self.app_settings.update(normalized_updates)
         self.save_settings()

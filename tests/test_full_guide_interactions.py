@@ -14,7 +14,13 @@ from PySide6.QtWidgets import QApplication, QFrame, QLabel
 from scripts.application_descriptor import ApplicationDescriptorFactory
 from scripts.full_guide_context import GuideSnapshot, WindowsGuideContext, choose_monitor, guide_geometry
 from scripts.full_guide_controller import FullGuideController
-from scripts.full_guide_hotkey import FullGuideHotkey, DEFAULT_GUIDE_HOTKEY, WM_HOTKEY, parse_hotkey
+from scripts.full_guide_hotkey import (
+    DEFAULT_ALL_SHORTCUTS_HOTKEY,
+    DEFAULT_GUIDE_HOTKEY,
+    WM_HOTKEY,
+    FullGuideHotkey,
+    parse_hotkey,
+)
 from scripts.full_guide_settings import FullGuideSettingsDialog
 from scripts.full_guide_window import FullGuideWindow
 from scripts.quick_hud_selection_store import QuickHudSelectionStore
@@ -65,6 +71,25 @@ class GuideHotkeyTests(unittest.TestCase):
         for text in ("Ctrl", "Alt", "Win", "Shift", "F5", "Win+L", "Ctrl+F12", "Ctrl+K, Ctrl+S", "Alt+Tab", "Ctrl+Alt+Delete"):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 parse_hotkey(text)
+
+    def test_second_instance_registers_a_distinct_identifier(self):
+        first_backend, second_backend = _Backend(), _Backend()
+        first = FullGuideHotkey(self.qt, backend=first_backend)
+        second = FullGuideHotkey(
+            self.qt,
+            backend=second_backend,
+            identifier_candidates=(0x534A, 0x534B),
+        )
+        self.addCleanup(first.close)
+        self.addCleanup(second.close)
+
+        self.assertTrue(first.configure(DEFAULT_GUIDE_HOTKEY))
+        self.assertTrue(second.configure(DEFAULT_ALL_SHORTCUTS_HOTKEY))
+
+        self.assertIn(first.identifier, (0x5348, 0x5349))
+        self.assertIn(second.identifier, (0x534A, 0x534B))
+        self.assertNotEqual(first.identifier, second.identifier)
+        self.assertEqual(parse_hotkey(DEFAULT_ALL_SHORTCUTS_HOTKEY).vk, ord("H"))
 
     def test_registration_conflict_retains_previous_key(self):
         service, backend = self.make()
