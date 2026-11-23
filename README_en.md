@@ -12,16 +12,16 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Windows-10%2F11-blue" alt="Windows 10/11" />
-  <img src="https://img.shields.io/badge/Release-v0.5.0--beta.2-9cf" alt="Release v0.5.0-beta.2" />
+  <img src="https://img.shields.io/badge/Release-v0.6.0--beta.1-9cf" alt="Release v0.6.0-beta.1" />
   <img src="https://img.shields.io/badge/Status-Beta-orange" alt="Beta" />
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB" alt="Python 3.10+" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/Fx1an5heng/ShortcutHUD/releases/download/v0.5.0-beta.2/ShortcutHUD-v0.5.0-beta.2-win64.zip">⬇️ <b>Download for Windows</b></a>
+  <a href="https://github.com/chen1880216/ShortcutHUD/releases/download/v0.6.0-beta.1/ShortcutHUD-v0.6.0-beta.1-win64.zip">⬇️ <b>Download for Windows</b></a>
   ·
-  <a href="https://github.com/Fx1an5heng/ShortcutHUD/releases">Releases</a>
+  <a href="https://github.com/chen1880216/ShortcutHUD/releases">Releases</a>
 </p>
 
 <p align="center">
@@ -54,7 +54,7 @@ ShortcutHUD is a **shortcut discovery tool for Windows**: while you hold Ctrl, S
 - ✅ Only shows hints; it never replaces existing shortcuts
 - ✅ Not a virtual keyboard — just a lightweight HUD
 
-> ⬇️ Regular users can simply download the portable build — **no Python required**: [Download for Windows](https://github.com/Fx1an5heng/ShortcutHUD/releases/download/v0.5.0-beta.2/ShortcutHUD-v0.5.0-beta.2-win64.zip)
+> ⬇️ Regular users can simply download the portable build — **no Python required**: [Download for Windows](https://github.com/chen1880216/ShortcutHUD/releases/download/v0.6.0-beta.1/ShortcutHUD-v0.6.0-beta.1-win64.zip)
 >
 > The portable build needs no internet connection at runtime. The exe is not commercially code-signed yet, so Windows may show a SmartScreen “Unknown publisher” warning; if the download source is this repository's GitHub Releases, you can verify the SHA256 checksum on the release page. Do not disable Defender or SmartScreen.
 
@@ -66,8 +66,8 @@ ShortcutHUD is a **shortcut discovery tool for Windows**: while you hold Ctrl, S
 
 No Python, Git, pip, virtual environment, or command line needed.
 
-1. **Click [Download for Windows](https://github.com/Fx1an5heng/ShortcutHUD/releases/download/v0.5.0-beta.2/ShortcutHUD-v0.5.0-beta.2-win64.zip)**
-2. Download `ShortcutHUD-v0.5.0-beta.2-win64.zip`
+1. **Click [Download for Windows](https://github.com/chen1880216/ShortcutHUD/releases/download/v0.6.0-beta.1/ShortcutHUD-v0.6.0-beta.1-win64.zip)**
+2. Download `ShortcutHUD-v0.6.0-beta.1-win64.zip`
 3. Extract the ZIP
 4. Double-click **`ShortcutHUD.exe`**
 5. A ShortcutHUD tray icon appears
@@ -207,7 +207,7 @@ A: `%APPDATA%\ShortcutHUD\user_shortcuts.json`.
 Requirements: Windows 10/11, Python 3.10+ (3.13 tested), PySide6, `keyboard`, `pywin32`, `comtypes`.
 
 ```bash
-git clone https://github.com/Fx1an5heng/ShortcutHUD.git
+git clone https://github.com/chen1880216/ShortcutHUD.git
 cd ShortcutHUD
 python -m venv .venv
 .venv\Scripts\activate

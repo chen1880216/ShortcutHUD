@@ -12,16 +12,16 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Windows-10%2F11-blue" alt="Windows 10/11" />
-  <img src="https://img.shields.io/badge/Release-v0.5.0--beta.2-9cf" alt="Release v0.5.0-beta.2" />
+  <img src="https://img.shields.io/badge/Release-v0.6.0--beta.1-9cf" alt="Release v0.6.0-beta.1" />
   <img src="https://img.shields.io/badge/Status-Beta-orange" alt="Beta" />
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB" alt="Python 3.10+" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/Fx1an5heng/ShortcutHUD/releases/download/v0.5.0-beta.2/ShortcutHUD-v0.5.0-beta.2-win64.zip">⬇️ <b>Download for Windows</b></a>
+  <a href="https://github.com/chen1880216/ShortcutHUD/releases/download/v0.6.0-beta.1/ShortcutHUD-v0.6.0-beta.1-win64.zip">⬇️ <b>Download for Windows</b></a>
   ·
-  <a href="https://github.com/Fx1an5heng/ShortcutHUD/releases">Releases</a>
+  <a href="https://github.com/chen1880216/ShortcutHUD/releases">Releases</a>
 </p>
 
 <p align="center">
@@ -54,7 +54,7 @@ ShortcutHUD 是一个 **Windows 快捷键提示工具**：在你按住 Ctrl、Sh
 - ✅ 只做提示，不代替任何原有快捷键
 - ✅ 不是虚拟键盘，只是一个轻量 HUD
 
-> ⬇️ 普通用户直接下载便携版即可，**不需要安装 Python**：[Download for Windows](https://github.com/Fx1an5heng/ShortcutHUD/releases/download/v0.5.0-beta.2/ShortcutHUD-v0.5.0-beta.2-win64.zip)
+> ⬇️ 普通用户直接下载便携版即可，**不需要安装 Python**：[Download for Windows](https://github.com/chen1880216/ShortcutHUD/releases/download/v0.6.0-beta.1/ShortcutHUD-v0.6.0-beta.1-win64.zip)
 >
 > 便携版运行不需要联网。当前 exe 尚未做商业代码签名，Windows 可能显示 SmartScreen “Unknown publisher” 类提示；如果下载来源确认是本仓库的 GitHub Releases，可核对页面上的 SHA256 校验值。不要关闭 Defender 或 SmartScreen。
 
@@ -66,8 +66,8 @@ ShortcutHUD 是一个 **Windows 快捷键提示工具**：在你按住 Ctrl、Sh
 
 不需要 Python、Git、pip、虚拟环境或命令行。
 
-1. **点击 [Download for Windows](https://github.com/Fx1an5heng/ShortcutHUD/releases/download/v0.5.0-beta.2/ShortcutHUD-v0.5.0-beta.2-win64.zip)**
-2. 下载 `ShortcutHUD-v0.5.0-beta.2-win64.zip`
+1. **点击 [Download for Windows](https://github.com/chen1880216/ShortcutHUD/releases/download/v0.6.0-beta.1/ShortcutHUD-v0.6.0-beta.1-win64.zip)**
+2. 下载 `ShortcutHUD-v0.6.0-beta.1-win64.zip`
 3. 解压 ZIP
 4. 双击 **`ShortcutHUD.exe`**
 5. 系统托盘出现 ShortcutHUD 图标
@@ -210,7 +210,7 @@ A：`%APPDATA%\ShortcutHUD\user_shortcuts.json`。
 环境要求：Windows 10/11、Python 3.10+（已测试 3.13）、PySide6、`keyboard`、`pywin32`、`comtypes`。
 
 ```bash
-git clone https://github.com/Fx1an5heng/ShortcutHUD.git
+git clone https://github.com/chen1880216/ShortcutHUD.git
 cd ShortcutHUD
 python -m venv .venv
 .venv\Scripts\activate

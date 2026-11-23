@@ -10,6 +10,7 @@ Run from the repository root:
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
@@ -43,12 +44,29 @@ def main() -> int:
         return 1
 
     # Bundled read-only defaults live next to the exe so portable copies work.
-    for name in ("config", "assets", "i18n"):
+    for name in ("assets", "i18n"):
         source = ROOT / name
         target = DIST / name
         if target.exists():
             shutil.rmtree(target)
         shutil.copytree(source, target)
+
+    # The config directory ships the shortcut data only: copying it wholesale
+    # would leak the developer's local settings, window position and backups
+    # into the portable package.
+    config_target = DIST / "config"
+    if config_target.exists():
+        shutil.rmtree(config_target)
+    config_target.mkdir(parents=True)
+    shutil.copy2(ROOT / "config" / "shortcuts.json", config_target / "shortcuts.json")
+    packs_source = ROOT / "config" / "shortcut_packs"
+    if packs_source.is_dir():
+        shutil.copytree(packs_source, config_target / "shortcut_packs")
+    (config_target / "settings.json").write_text(
+        json.dumps({"language": "zh_CN"}, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
 
     for relative in REQUIRED_FILES:
         if not (DIST / relative).exists():
