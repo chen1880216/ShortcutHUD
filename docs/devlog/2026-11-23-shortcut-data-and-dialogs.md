@@ -145,6 +145,30 @@ exe 启动正常；解压 zip 再跑一遍同样正常。
 
 代价：暂时只做到「第二个实例安静退出」，还没有把已有窗口唤到前台（托盘程序本来也没有主窗口）。
 
+## 按住显示延迟
+
+浮窗原来固定 150ms 出现（仅 Win 时 300ms），两个值都是
+`scripts/shortcut_hud_controller.py` 里的类常量，用户改不了。现在做成设置项：
+
+- 新增 `scripts/hud_show_delay.py`：设置键 `show_delay_ms`、默认 150、范围 0–5000 毫秒。
+  `normalize_show_delay_ms()` 对 bool / 非数字 / NaN / inf 一律回退默认值——坏配置不能抛异常
+  把 Qt 槽炸掉；`resolve_show_delay_ms(..., win_only=True)` 负责 Win 的单独下限。
+- Win 仍保留 ≥300ms 下限的原因：`scripts/win_discovery_proxy.py` 只在「Win 按住超过发现阈值」
+  之后才 arm，arm 之前所有按键都透传；把 Win 延迟调到 0 会让它过早拦截系统原生 Win 组合键。
+  其余修饰键完全按用户设定生效，设成 0 就是按下即显示。
+- 控制器每次启动计时器时**实时读配置**：`_configured_show_delay_ms()` 先
+  `get_setting(SHOW_DELAY_SETTING, None)`，配置缺失（测试里的 fake config）时回退构造参数，
+  其余交给 `resolve_show_delay_ms()` 决定 interval。所以设置改完立刻生效，不用重启。
+- 设置对话框在「不透明度」下面新增「按住显示」组：`QDoubleSpinBox` 0.00–5.00 秒、步进 0.05、
+  `suffix " s"`。`setKeyboardTracking(False)` 是关键——否则输入 1.5 时会在敲到 `1` 时先应用一次
+  1.0 秒。提示文案用 `%1` 占位而不是 f-string，否则 `lupdate` 提取不到可翻译串。
+- 只影响「按住修饰键自动出现」的浮窗；托盘菜单和 `Ctrl+Alt+Shift+H` 总览是显式命令，不走延迟。
+- 值落在 `config/settings.json` 的 `show_delay_ms`（毫秒），可以直接手改。
+
+i18n 手工往 `i18n/shortcut_overlay_zh_CN.ts` 补了 3 条中文。重编 `.qm` 踩了个坑：
+`.venv\Scripts\pyside6-lrelease.exe` 静默 `exit 1`（不打印任何原因），改用
+`.venv\Lib\site-packages\PySide6\lrelease.exe` 才成功（`Generated 254 translation(s)`）。
+
 ## 测试
 
 - 新增/调整：解析层（SHELL_DESKTOP 有自己一层、WPS_UNKNOWN 回退 DEFAULT）、
@@ -155,6 +179,10 @@ exe 启动正常；解压 zip 再跑一遍同样正常。
   都一样，写死在每个应用组里会随用户改键而误导。
 - 全量 `python -m unittest` 534 条通过；`tests/test_full_guide_interactions.py`
   里那条布局测试依赖窗口/屏幕状态，偶发失败。
+- 按住显示延迟：新增 `tests/test_hud_show_delay.py`（归一化 / Win 下限 / 配置读写 / 对话框回读），
+  控制器加 4 条（配置 250 → 计时器 250、非法值 → 150、缺配置 → 构造参数、Win + 配置 0 → 300）。
+  本次全量 560 条，仅上面那条布局测试失败——已用 `git stash` 在干净基线上复跑，
+  同样失败，确认与本次改动无关。
 
 ## 遗留
 
@@ -162,5 +190,7 @@ exe 启动正常；解压 zip 再跑一遍同样正常。
 - 其它六个内置包应用仍按默认行数截断，是否也提到全量待定。
 - PixPin 其它页签（截图 / 长截图 / 贴图窗口 …）需要点鼠标切换，尚未收录。
 - 第二个实例目前只是安静退出，不会把已有实例唤到前台。
+- 按住显示延迟改动时如果修饰键正按着，新值要等下一次按住才生效（当前计时器不重启，
+  避免改个数字把正在显示的浮窗打乱）。
 - 0.6.0-beta.1 已发布（含本批数据与界面改动），上游 `Fx1an5heng` 的下载链接已改指本仓库；
   单实例修复已重传同 tag 的 zip。

@@ -209,6 +209,37 @@ class ShortcutHudControllerTests(unittest.TestCase):
         self.assertFalse(self.hud.visible)
         self.assertEqual(self.hud.show_calls, 0)
 
+    def test_configured_show_delay_drives_the_timer(self) -> None:
+        self.config.settings["show_delay_ms"] = 250
+
+        self.controller.on_modifiers_changed({"ctrl"})
+
+        self.assertTrue(self.controller._show_timer.isActive())
+        self.assertEqual(self.controller._show_timer.interval(), 250)
+        self.assertTrue(wait_until(lambda: self.hud.visible, timeout_ms=600))
+
+    def test_invalid_configured_delay_uses_the_product_default(self) -> None:
+        self.config.settings["show_delay_ms"] = "soon"
+
+        self.controller.on_modifiers_changed({"ctrl"})
+
+        self.assertEqual(self.controller._show_timer.interval(), 150)
+
+    def test_missing_configured_delay_keeps_constructor_default(self) -> None:
+        self.controller.on_modifiers_changed({"ctrl"})
+
+        self.assertEqual(self.controller._show_timer.interval(), 20)
+
+    def test_win_only_hold_applies_the_safety_floor(self) -> None:
+        self._enable_win_shortcuts()
+        self.proxy.current_win_vk = VK_LWIN
+        self.config.settings["show_delay_ms"] = 0
+
+        self.controller.on_modifiers_changed({"win"})
+
+        self.assertTrue(self.controller._show_timer.isActive())
+        self.assertEqual(self.controller._show_timer.interval(), 300)
+
     def test_stale_recovery_cancels_pending_show(self) -> None:
         handler, _physical_state = self._make_recovery_handler()
         handler._active_modifiers.add("ctrl")

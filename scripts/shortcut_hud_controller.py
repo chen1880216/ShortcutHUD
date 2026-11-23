@@ -15,6 +15,12 @@ from .hud_entry_limits import (
     DEFAULT_SHOW_ALL_SHORTCUTS,
     SHOW_ALL_SHORTCUTS_SETTING,
 )
+from .hud_show_delay import (
+    DEFAULT_SHOW_DELAY_MS as _DEFAULT_SHOW_DELAY_MS,
+    SHOW_DELAY_SETTING,
+    WIN_ONLY_MIN_SHOW_DELAY_MS as _WIN_ONLY_SHOW_DELAY_MS,
+    resolve_show_delay_ms,
+)
 from .modifier_state import canonicalize_modifier_state
 from .shortcut_catalog import ShortcutCatalog
 from .shortcut_catalog_resolver import CatalogShortcutResolver
@@ -74,8 +80,8 @@ class _WinDiscoveryProxy(Protocol):
 class ShortcutHudController(QObject):
     """Resolve modifier state and update one persistent HUD view."""
 
-    DEFAULT_SHOW_DELAY_MS = 150
-    WIN_ONLY_SHOW_DELAY_MS = 300
+    DEFAULT_SHOW_DELAY_MS = _DEFAULT_SHOW_DELAY_MS
+    WIN_ONLY_SHOW_DELAY_MS = _WIN_ONLY_SHOW_DELAY_MS
     # The explicit all-groups command must survive the release of its own
     # chord: modifier events arriving inside this window are not new holds.
     SECTIONS_GRACE_SECONDS = 0.35
@@ -443,13 +449,25 @@ class ShortcutHudController(QObject):
     def _start_show_timer(self) -> None:
         if not self._quick_hud_is_allowed() or self._show_timer.isActive():
             return
-        delay = (
-            self._win_only_show_delay_ms
-            if self._current_modifier == "Win"
-            else self._show_delay_ms
-        )
-        self._show_timer.setInterval(delay)
+        self._show_timer.setInterval(self._configured_show_delay_ms())
         self._show_timer.start()
+
+    def _configured_show_delay_ms(self) -> int:
+        """Return the current hold-to-show delay for the held modifier.
+
+        The Settings value wins whenever it is present; the constructor
+        arguments stay as the fallback so embedders (and tests) can run with
+        short delays without touching the settings file.
+        """
+
+        win_only = self._current_modifier == "Win"
+        fallback = (
+            self._win_only_show_delay_ms if win_only else self._show_delay_ms
+        )
+        stored = self._config_manager.get_setting(SHOW_DELAY_SETTING, None)
+        if stored is None:
+            return fallback
+        return resolve_show_delay_ms(stored, win_only=win_only)
 
     def _quick_hud_is_allowed(self) -> bool:
         return (

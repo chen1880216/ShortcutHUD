@@ -114,7 +114,7 @@ Hold **Shift** as well: the same HUD updates in place to `Ctrl + Shift`. Release
 | Feature | Description |
 |---|---|
 | 🎯 App-aware | Detects the foreground application automatically |
-| ⌨️ Shortcut HUD | Appears while holding modifiers; updates in place for combinations |
+| ⌨️ Shortcut HUD | Appears while holding modifiers; updates in place for combinations; the delay is configurable |
 | 🌐 Global hints | Windows system shortcuts (Win, Alt+Tab, Ctrl+Shift+Esc) always pinned |
 | ✏️ Customization | Add your own shortcuts and display names for any app |
 | ⏺ Recorder | Click “Record Shortcut” and simply press the combination |
@@ -123,6 +123,7 @@ Hold **Shift** as well: the same HUD updates in place to `Ctrl + Shift`. Release
 | 🗂 All-groups overview | Press **Ctrl+Alt+Shift+H** to list every Ctrl / Alt / Shift shortcut of the current app at once; it stays on screen until you tap a modifier or press Esc |
 | 🖥 Desktop layer | Pressing Ctrl on the Windows desktop shows the file-operation shortcuts (select all, copy, paste …) |
 | ♾ No row limit | A per-app setting lets one app show its whole group instead of the default cut |
+| ⏱ Adjustable hold delay | Choose how long (0–5 s) modifiers must be held before the HUD appears; quick taps stay silent and Win-only keeps a 0.30 s safety floor |
 | 🛡 Passive by design | No focus stealing, no input swallowing |
 
 ---

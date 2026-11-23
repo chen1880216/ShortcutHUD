@@ -21,6 +21,11 @@ from .hud_entry_limits import (
     DEFAULT_SHOW_ALL_SHORTCUTS,
     SHOW_ALL_SHORTCUTS_SETTING,
 )
+from .hud_show_delay import (
+    DEFAULT_SHOW_DELAY_MS,
+    SHOW_DELAY_SETTING,
+    normalize_show_delay_ms,
+)
 from .shortcut_catalog import ShortcutCatalog
 
 # Type aliases for better readability and type hinting, representing
@@ -228,6 +233,7 @@ class ConfigManager:
             FULLSCREEN_SUPPRESSION_SETTING: DEFAULT_FULLSCREEN_SUPPRESSION_ENABLED,
             EXCLUDED_APPLICATIONS_SETTING: [],
             SHOW_ALL_SHORTCUTS_SETTING: DEFAULT_SHOW_ALL_SHORTCUTS,
+            SHOW_DELAY_SETTING: DEFAULT_SHOW_DELAY_MS,
             # Other settings like window position/size can be added here.
         }
 
@@ -292,6 +298,13 @@ class ConfigManager:
             self.app_settings[SHOW_ALL_SHORTCUTS_SETTING] = DEFAULT_SHOW_ALL_SHORTCUTS
             made_changes_due_to_missing_keys = True
 
+        normalized_show_delay = normalize_show_delay_ms(
+            self.app_settings.get(SHOW_DELAY_SETTING)
+        )
+        if normalized_show_delay != self.app_settings.get(SHOW_DELAY_SETTING):
+            made_changes_due_to_missing_keys = True
+        self.app_settings[SHOW_DELAY_SETTING] = normalized_show_delay
+
         # Save settings if:
         # 1. The file didn't exist.
         # 2. The file existed but was invalid (so defaults were heavily used).
@@ -353,6 +366,10 @@ class ConfigManager:
             show_all = normalized_updates[SHOW_ALL_SHORTCUTS_SETTING]
             normalized_updates[SHOW_ALL_SHORTCUTS_SETTING] = (
                 show_all if isinstance(show_all, bool) else DEFAULT_SHOW_ALL_SHORTCUTS
+            )
+        if SHOW_DELAY_SETTING in normalized_updates:
+            normalized_updates[SHOW_DELAY_SETTING] = normalize_show_delay_ms(
+                normalized_updates[SHOW_DELAY_SETTING]
             )
         self.app_settings.update(normalized_updates)
         self.save_settings()

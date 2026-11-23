@@ -298,6 +298,21 @@
         <translation>窗口不透明度:</translation>
     </message>
     <message>
+        <location filename="../scripts/settings_dialog.py" line="340"/>
+        <source>Hold to Show</source>
+        <translation>按住显示</translation>
+    </message>
+    <message>
+        <location filename="../scripts/settings_dialog.py" line="357"/>
+        <source>Show after holding:</source>
+        <translation>按住多久后显示：</translation>
+    </message>
+    <message>
+        <location filename="../scripts/settings_dialog.py" line="369"/>
+        <source>0 s shows at once. Holding Win alone still waits at least %1 s.</source>
+        <translation>0 秒表示按下即显示；单按 Win 键仍至少等待 %1 秒。</translation>
+    </message>
+    <message>
         <location filename="../scripts/settings_dialog.py" line="309"/>
         <location filename="../scripts/settings_dialog.py" line="579"/>
         <source>Language</source>

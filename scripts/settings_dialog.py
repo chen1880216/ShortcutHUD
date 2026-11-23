@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QCheckBox,
     QListWidget,
+    QDoubleSpinBox,
 )
 from PySide6.QtCore import Qt, Signal, Slot, QEvent
 from PySide6.QtGui import QColor
@@ -38,6 +39,14 @@ from .game_guard_settings import (
 from .hud_entry_limits import (
     DEFAULT_SHOW_ALL_SHORTCUTS,
     SHOW_ALL_SHORTCUTS_SETTING,
+)
+from .hud_show_delay import (
+    DEFAULT_SHOW_DELAY_MS,
+    MAX_SHOW_DELAY_MS,
+    MIN_SHOW_DELAY_MS,
+    SHOW_DELAY_SETTING,
+    WIN_ONLY_MIN_SHOW_DELAY_MS,
+    normalize_show_delay_ms,
 )
 
 try:
@@ -129,6 +138,7 @@ class SettingsDialog(QDialog):
         # Declare UI element instance variables.
         self._theme_group_box: Optional[QGroupBox] = None
         self._opacity_group_box: Optional[QGroupBox] = None
+        self._show_delay_group_box: Optional[QGroupBox] = None
         self._language_group_box: Optional[QGroupBox] = None
         self._custom_apps_group_box: Optional[QGroupBox] = None
         self._game_guard_group_box: Optional[QGroupBox] = None
@@ -136,6 +146,7 @@ class SettingsDialog(QDialog):
         self.lang_combo: Optional[QComboBox] = None
         self.opacity_slider: Optional[QSlider] = None
         self.opacity_label: Optional[QLabel] = None
+        self.show_delay_spin: Optional[QDoubleSpinBox] = None
         self.custom_bg_color_button: Optional[QPushButton] = None
         self.custom_key_color_button: Optional[QPushButton] = None
         self.custom_text_color_button: Optional[QPushButton] = None
@@ -150,6 +161,8 @@ class SettingsDialog(QDialog):
         self._excluded_applications_label: Optional[QLabel] = None
         self._theme_form_label: Optional[QLabel] = None
         self._opacity_form_label: Optional[QLabel] = None
+        self._show_delay_form_label: Optional[QLabel] = None
+        self._show_delay_hint: Optional[QLabel] = None
         self._language_form_label: Optional[QLabel] = None
         self._custom_bg_row_label: Optional[QLabel] = None
         self._custom_key_row_label: Optional[QLabel] = None
@@ -159,6 +172,7 @@ class SettingsDialog(QDialog):
         self._main_layout: QVBoxLayout = QVBoxLayout(self)
         self._setup_theme_group()
         self._setup_opacity_group()
+        self._setup_show_delay_group()
         self._setup_language_group()
         self._setup_game_guard_group()
         self._setup_custom_apps_group()
@@ -187,6 +201,10 @@ class SettingsDialog(QDialog):
             self.show_all_shortcuts_checkbox.toggled.connect(
                 self._on_setting_changed_by_user
             )
+        if self.show_delay_spin:
+            self.show_delay_spin.valueChanged.connect(
+                self._on_setting_changed_by_user
+            )
         # Custom color changes are handled within _select_color.
 
     def apply_fixed_dialog_styles(self) -> None:
@@ -204,6 +222,8 @@ class SettingsDialog(QDialog):
             QComboBox::drop-down {{ border: none; width: 15px; background-color: {self.BUTTON_BACKGROUND_COLOR}; }}
             /* QComboBox::down-arrow {{ image: url(:/icons/light_arrow.svg); }} */ /* Example for custom arrow */
             QComboBox QAbstractItemView {{ color: {self.DIALOG_TEXT_COLOR}; background-color: {self.DIALOG_BACKGROUND_COLOR}; border: 1px solid {self.BUTTON_BORDER_COLOR}; selection-background-color: {self.COMBOBOX_SELECTION_BG_COLOR}; selection-color: {self.DIALOG_TEXT_COLOR}; outline: 0px; }}
+            QDoubleSpinBox {{ color: {self.DIALOG_TEXT_COLOR}; background-color: {self.BUTTON_BACKGROUND_COLOR}; border: 1px solid {self.BUTTON_BORDER_COLOR}; padding: 4px 5px; border-radius: 3px; }}
+            QDoubleSpinBox:hover {{ border-color: {self.BUTTON_HOVER_BG_COLOR}; }}
             QListWidget {{ color: {self.DIALOG_TEXT_COLOR}; background-color: {self.BUTTON_BACKGROUND_COLOR}; border: 1px solid {self.BUTTON_BORDER_COLOR}; selection-background-color: {self.COMBOBOX_SELECTION_BG_COLOR}; outline: 0px; }}
             QSlider {{ background-color: transparent; }}
             QSlider::groove:horizontal {{ background: {self.SLIDER_GROOVE_BG_COLOR}; height: 8px; border-radius: 4px; border: 1px solid {self.SLIDER_GROOVE_BORDER_COLOR}; }}
@@ -313,6 +333,41 @@ class SettingsDialog(QDialog):
             "", self.opacity_label
         )  # For alignment with slider value.
         self._main_layout.addWidget(self._opacity_group_box)
+
+    def _setup_show_delay_group(self) -> None:
+        """Creates the hold-to-show delay selector for the passive Quick HUD."""
+
+        self._show_delay_group_box = QGroupBox(self.tr("Hold to Show"))
+        delay_layout = QFormLayout(self._show_delay_group_box)
+        self.show_delay_spin = QDoubleSpinBox()
+        self.show_delay_spin.setDecimals(2)
+        self.show_delay_spin.setSingleStep(0.05)
+        self.show_delay_spin.setRange(
+            MIN_SHOW_DELAY_MS / 1000.0, MAX_SHOW_DELAY_MS / 1000.0
+        )
+        self.show_delay_spin.setSuffix(" s")
+        # Commit only finished edits, so typing "1.5" does not apply "1.0".
+        self.show_delay_spin.setKeyboardTracking(False)
+        self.show_delay_spin.setValue(
+            normalize_show_delay_ms(
+                self._initial_settings.get(SHOW_DELAY_SETTING)
+            )
+            / 1000.0
+        )
+        self._show_delay_form_label = QLabel(self.tr("Show after holding:"))
+        delay_layout.addRow(self._show_delay_form_label, self.show_delay_spin)
+        self._show_delay_hint = QLabel(self._show_delay_hint_text())
+        self._show_delay_hint.setWordWrap(True)
+        delay_layout.addRow("", self._show_delay_hint)
+        self._main_layout.addWidget(self._show_delay_group_box)
+
+    def _show_delay_hint_text(self) -> str:
+        """Explain the hold-to-show setting, including the Win-only floor."""
+
+        floor_text = f"{WIN_ONLY_MIN_SHOW_DELAY_MS / 1000.0:.2f}"
+        return self.tr(
+            "0 s shows at once. Holding Win alone still waits at least %1 s."
+        ).replace("%1", floor_text)
 
     def _setup_language_group(self) -> None:
         """Creates and configures the language selection group box for the application UI."""
@@ -564,6 +619,13 @@ class SettingsDialog(QDialog):
             else self.DEFAULT_LANGUAGE_ID
         )
         opacity_value = self.opacity_slider.value() if self.opacity_slider else 85
+        show_delay_ms = (
+            normalize_show_delay_ms(
+                int(round(self.show_delay_spin.value() * 1000))
+            )
+            if self.show_delay_spin
+            else DEFAULT_SHOW_DELAY_MS
+        )
         return {
             "theme_name": theme_id,
             "opacity": opacity_value,
@@ -589,6 +651,7 @@ class SettingsDialog(QDialog):
                 self.show_all_shortcuts_checkbox
                 and self.show_all_shortcuts_checkbox.isChecked()
             ),
+            SHOW_DELAY_SETTING: show_delay_ms,
         }
 
     def changeEvent(self, event: QEvent) -> None:
@@ -606,6 +669,8 @@ class SettingsDialog(QDialog):
             self._theme_group_box.setTitle(self.tr("Appearance"))
         if self._opacity_group_box:
             self._opacity_group_box.setTitle(self.tr("Opacity"))
+        if self._show_delay_group_box:
+            self._show_delay_group_box.setTitle(self.tr("Hold to Show"))
         if self._language_group_box:
             self._language_group_box.setTitle(self.tr("Language"))
         if self._custom_apps_group_box:
@@ -616,6 +681,10 @@ class SettingsDialog(QDialog):
             self._theme_form_label.setText(self.tr("Theme:"))
         if self._opacity_form_label:
             self._opacity_form_label.setText(self.tr("Window Opacity:"))
+        if self._show_delay_form_label:
+            self._show_delay_form_label.setText(self.tr("Show after holding:"))
+        if self._show_delay_hint:
+            self._show_delay_hint.setText(self._show_delay_hint_text())
         if self._language_form_label:
             self._language_form_label.setText(self.tr("Interface Language:"))
         if self._custom_apps_description:

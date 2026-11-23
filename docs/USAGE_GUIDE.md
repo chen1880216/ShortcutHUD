@@ -13,6 +13,7 @@ This guide provides detailed instructions on how to use and configure the Shortc
     - [Theme Selection](#theme-selection)
     - [Custom Theme Colors](#custom-theme-colors)
     - [Opacity Adjustment](#opacity-adjustment)
+    - [Hold-to-Show Delay](#hold-to-show-delay)
     - [Language Selection](#language-selection)
   - [5. Customizing Shortcuts (`shortcuts.json`)](#5-customizing-shortcuts-shortcutsjson)
     - [File Structure](#file-structure)
@@ -71,6 +72,15 @@ Click each button to open a color picker.
 ### Opacity Adjustment
 
 *   **Window Opacity**: Use the slider to adjust the overall transparency of the overlay window, from 20% (very transparent) to 100% (fully opaque).
+
+### Hold-to-Show Delay
+
+*   **Show after holding**: How long a modifier must stay held before the hint window appears — 0.00 to 5.00 seconds in 0.05 s steps.
+    *   `0.00` s shows the HUD immediately; use 0.20–0.30 s if a quick Ctrl+C / Ctrl+S makes it flash.
+    *   A quick tap (released before the delay) never shows the HUD.
+    *   Holding **Win** alone always waits at least 0.30 s, so native Win shortcuts are not intercepted early; other modifiers use the configured value as-is.
+    *   This affects only the automatic hold-to-show HUD. The tray menu and the **Ctrl+Alt+Shift+H** overview are explicit commands and ignore the delay.
+    *   The value is stored as `show_delay_ms` (milliseconds) in `config/settings.json` and can also be edited by hand.
 
 ### Language Selection
 
