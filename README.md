@@ -25,6 +25,12 @@
 </p>
 
 <p align="center">
+  <a href="https://linux.do"><img src="https://img.shields.io/badge/LINUX-DO-ff9b00" alt="LINUX DO" /></a>
+</p>
+
+<p align="center">本开源项目已链接并认可 <a href="https://linux.do">LINUX DO</a> 社区。</p>
+
+<p align="center">
   <a href="#1-分钟上手">🚀 1 分钟上手</a> ·
   <a href="#5-秒看懂怎么用">💡 5 秒看懂</a> ·
   <a href="#功能">✨ 功能</a> ·

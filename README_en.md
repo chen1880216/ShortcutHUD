@@ -25,6 +25,12 @@
 </p>
 
 <p align="center">
+  <a href="https://linux.do"><img src="https://img.shields.io/badge/LINUX-DO-ff9b00" alt="LINUX DO" /></a>
+</p>
+
+<p align="center">This open-source project is linked with, and endorses, the <a href="https://linux.do">LINUX DO</a> community.</p>
+
+<p align="center">
   <a href="#quick-start">🚀 Quick Start</a> ·
   <a href="#how-it-works">💡 How It Works</a> ·
   <a href="#features">✨ Features</a> ·
