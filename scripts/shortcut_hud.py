@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QGuiApplication, QResizeEvent, QShowEvent
 from PySide6.QtWidgets import (
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QSizePolicy,
@@ -53,6 +54,14 @@ class ShortcutHudWindow(QWidget):
     WINDOW_WIDTH = 360
     SCREEN_MARGIN = 20
     MINIMUM_HEIGHT = 120
+
+    # 面板底色/边框的基准值；实际 alpha 会乘以「窗口不透明度」设置。
+    PANEL_BACKGROUND_RGB = (24, 26, 34)
+    PANEL_BACKGROUND_ALPHA = 232
+    PANEL_BORDER_RGB = (130, 140, 165)
+    PANEL_BORDER_ALPHA = 150
+    MINIMUM_WINDOW_OPACITY = 20.0
+    DEFAULT_WINDOW_OPACITY = 100.0
 
     def __init__(
         self,
@@ -112,49 +121,85 @@ class ShortcutHudWindow(QWidget):
         panel_layout.addWidget(self._entries_container)
 
         outer_layout.addWidget(panel)
-        self.setStyleSheet(
-            """
-            QWidget#shortcutHudPanel {
-                background-color: rgba(24, 26, 34, 232);
-                border: 1px solid rgba(130, 140, 165, 150);
+        self._panel = panel
+        self._opacity_percent = self.DEFAULT_WINDOW_OPACITY
+        self._opacity_effect = QGraphicsOpacityEffect(panel)
+        self._opacity_effect.setOpacity(1.0)
+        panel.setGraphicsEffect(self._opacity_effect)
+        self.setStyleSheet(self._build_stylesheet())
+
+    def _build_stylesheet(self) -> str:
+        """Build the panel stylesheet (colours are fixed; opacity uses an effect)."""
+
+        background_alpha = self.PANEL_BACKGROUND_ALPHA
+        border_alpha = self.PANEL_BORDER_ALPHA
+        bg_r, bg_g, bg_b = self.PANEL_BACKGROUND_RGB
+        bd_r, bd_g, bd_b = self.PANEL_BORDER_RGB
+        return f"""
+            QWidget#shortcutHudPanel {{
+                background-color: rgba({bg_r}, {bg_g}, {bg_b}, {background_alpha});
+                border: 1px solid rgba({bd_r}, {bd_g}, {bd_b}, {border_alpha});
                 border-radius: 8px;
-            }
-            QLabel#shortcutHudHeader {
+            }}
+            QLabel#shortcutHudHeader {{
                 color: #F4F6FA;
                 font-size: 12pt;
                 font-weight: 600;
                 background: transparent;
-            }
-            QFrame#shortcutHudSeparator {
+            }}
+            QFrame#shortcutHudSeparator {{
                 background-color: rgba(130, 140, 165, 110);
                 border: none;
-            }
-            QWidget#shortcutHudGlobalSection {
+            }}
+            QWidget#shortcutHudGlobalSection {{
                 background: transparent;
-            }
-            QLabel#shortcutHudGlobalSectionLabel {
+            }}
+            QLabel#shortcutHudGlobalSectionLabel {{
                 color: rgba(190, 198, 215, 190);
                 font-size: 8pt;
                 font-weight: 500;
                 background: transparent;
-            }
-            QFrame#shortcutHudGlobalSectionLine {
+            }}
+            QFrame#shortcutHudGlobalSectionLine {{
                 background-color: rgba(130, 140, 165, 80);
                 border: none;
-            }
-            QLabel#shortcutHudKey {
+            }}
+            QLabel#shortcutHudKey {{
                 color: #9CC9FF;
                 font-size: 10pt;
                 font-weight: 700;
                 background: transparent;
-            }
-            QLabel#shortcutHudDescription {
+            }}
+            QLabel#shortcutHudDescription {{
                 color: #E6E9F0;
                 font-size: 10pt;
                 background: transparent;
-            }
+            }}
             """
-        )
+
+    def apply_opacity(self, percent: float | int | None) -> None:
+        """Apply the configured window opacity (percentage, clamped to 20..100).
+
+        用 `QGraphicsOpacityEffect` 作用在面板上：底板、文字、键名一起变透明，
+        与设置里「窗口不透明度」的字面意思一致，也不依赖分层窗口/合成器行为。
+        """
+
+        try:
+            value = float(percent) if percent is not None else self.DEFAULT_WINDOW_OPACITY
+        except (TypeError, ValueError):
+            value = self.DEFAULT_WINDOW_OPACITY
+        value = max(self.MINIMUM_WINDOW_OPACITY, min(self.DEFAULT_WINDOW_OPACITY, value))
+        if value == self._opacity_percent:
+            return
+        self._opacity_percent = value
+        self._opacity_effect.setOpacity(value / 100.0)
+
+    @property
+    def opacity_percent(self) -> float:
+        """Current opacity used for the panel background."""
+
+        return self._opacity_percent
+
 
     def set_entries(
         self,

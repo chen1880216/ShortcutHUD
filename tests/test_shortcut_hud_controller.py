@@ -16,14 +16,17 @@ from scripts.win_discovery_proxy import VK_LWIN
 
 
 class _FakeConfigManager:
-    def __init__(self, shortcuts: dict[str, object]) -> None:
+    def __init__(self, shortcuts: dict[str, object], settings: dict[str, object] | None = None) -> None:
         self.shortcuts = shortcuts
+        self.settings = settings or {}
 
     def get_all_shortcuts(self) -> dict[str, object]:
         return self.shortcuts.copy()
 
     def get_setting(self, key: str, default: object = None) -> object:
-        return "zh_CN" if key == "language" else default
+        if key == "language":
+            return "zh_CN"
+        return self.settings.get(key, default)
 
 
 class _FakeForegroundMonitor:
@@ -40,6 +43,7 @@ class _FakeHudWindow:
         self.show_all_flags: list[bool] = []
         self.sections_rendered: list[tuple[str, list[object]]] = []
         self.sections_header: str | None = None
+        self.opacity_values: list[float | int | None] = []
 
     def isVisible(self) -> bool:
         return self.visible
@@ -51,6 +55,9 @@ class _FakeHudWindow:
     def show_hud(self) -> None:
         self.visible = True
         self.show_calls += 1
+
+    def apply_opacity(self, percent: float | int | None) -> None:
+        self.opacity_values.append(percent)
 
     def set_entries(
         self,
@@ -624,6 +631,28 @@ class ShortcutHudControllerTests(unittest.TestCase):
             [("Tab", "GLOBAL"), ("F4", "GLOBAL")],
         )
 
+
+    def test_opacity_setting_reaches_the_hud_before_rendering(self) -> None:
+        self.config.settings["opacity"] = 60
+
+        self.controller.on_modifiers_changed({"ctrl"})
+        self.assertTrue(wait_until(lambda: self.hud.visible))
+
+        self.assertEqual(self.hud.opacity_values[-1], 60.0)
+
+    def test_missing_or_invalid_opacity_setting_keeps_the_default(self) -> None:
+        for value in (None, "abc", True):
+            with self.subTest(value=value):
+                self.hud.opacity_values.clear()
+                if value is None:
+                    self.config.settings.pop("opacity", None)
+                else:
+                    self.config.settings["opacity"] = value
+                self.controller.on_modifiers_changed({"ctrl"})
+                self.assertTrue(wait_until(lambda: self.hud.visible))
+                self.assertIsNone(self.hud.opacity_values[-1])
+                self.controller.on_modifiers_changed(set())
+                wait_until(lambda: not self.hud.visible)
 
     def test_show_all_groups_lists_ctrl_alt_and_shift_sections(self) -> None:
         self.config.shortcuts["CODE.EXE"]["Alt"] = {"F": "File"}

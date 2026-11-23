@@ -48,6 +48,9 @@ class _Hud:
         self.visible = True
         self.show_count += 1
 
+    def apply_opacity(self, _percent: object = None) -> None:
+        pass
+
     def set_entries(self, _app: str, _modifier: str, entries: list, _language: str, _display_name: str | None = None, *, show_all: bool = False) -> None:
         self.entries = entries
 

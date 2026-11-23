@@ -51,6 +51,9 @@ class _Hud:
     def show_hud(self) -> None:
         pass
 
+    def apply_opacity(self, percent) -> None:
+        self.opacity = percent
+
     def set_entries(self, application_name, modifier, entries, language, display_name=None, *, show_all=False) -> None:
         self.rendered = (application_name, modifier, entries, language, display_name)
 

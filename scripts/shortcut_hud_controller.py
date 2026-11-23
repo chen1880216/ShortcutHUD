@@ -40,6 +40,8 @@ class _HudView(Protocol):
 
     def show_hud(self) -> None: ...
 
+    def apply_opacity(self, percent: float | int | None) -> None: ...
+
     def set_entries(
         self,
         application_name: str,
@@ -199,6 +201,7 @@ class ShortcutHudController(QObject):
         )
         app_name = self._foreground_monitor.current_app_name
         language = self._language()
+        self._hud_window.apply_opacity(self._window_opacity())
         self._hud_window.set_sections(
             self._application_key(),
             sections,
@@ -370,6 +373,7 @@ class ShortcutHudController(QObject):
     def _render(self, entries: list[ShortcutEntry]) -> None:
         app_name = self._foreground_monitor.current_app_name
         language = self._language()
+        self._hud_window.apply_opacity(self._window_opacity())
         self._hud_window.set_entries(
             self._application_key(),
             self._current_modifier or "",
@@ -393,6 +397,14 @@ class ShortcutHudController(QObject):
             DEFAULT_SHOW_ALL_SHORTCUTS,
         )
         return value if isinstance(value, bool) else DEFAULT_SHOW_ALL_SHORTCUTS
+
+    def _window_opacity(self) -> float | None:
+        """Read the overlay opacity percentage (``None`` keeps the default)."""
+
+        value = self._config_manager.get_setting("opacity", None)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        return float(value)
 
     def _current_catalog(self) -> ShortcutCatalog:
         catalog_getter = getattr(self._config_manager, "get_shortcut_catalog", None)

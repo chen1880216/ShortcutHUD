@@ -83,6 +83,31 @@ class ShortcutHudPresentationTests(unittest.TestCase):
         self.assertEqual(headers, ["Ctrl", "Alt"])
         hud.deleteLater()
 
+    def test_opacity_setting_drives_the_panel_effect(self) -> None:
+        hud = ShortcutHudWindow()
+        self.assertEqual(hud.opacity_percent, 100)
+        self.assertAlmostEqual(hud._opacity_effect.opacity(), 1.0)
+
+        hud.apply_opacity(75)
+        self.assertEqual(hud.opacity_percent, 75)
+        self.assertAlmostEqual(hud._opacity_effect.opacity(), 0.75)
+
+        hud.apply_opacity(100)
+        self.assertAlmostEqual(hud._opacity_effect.opacity(), 1.0)
+        hud.deleteLater()
+
+    def test_opacity_setting_is_clamped_and_ignores_garbage(self) -> None:
+        hud = ShortcutHudWindow()
+        hud.apply_opacity(5)
+        self.assertEqual(hud.opacity_percent, ShortcutHudWindow.MINIMUM_WINDOW_OPACITY)
+        hud.apply_opacity(500)
+        self.assertEqual(hud.opacity_percent, 100)
+        hud.apply_opacity(None)
+        self.assertEqual(hud.opacity_percent, 100)
+        hud.apply_opacity("nonsense")
+        self.assertEqual(hud.opacity_percent, 100)
+        hud.deleteLater()
+
     def test_string_description_is_displayed_directly(self) -> None:
         self.assertEqual(select_description_text("Save", "zh_CN"), "Save")
 

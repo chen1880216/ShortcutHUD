@@ -38,6 +38,9 @@ class _Hud:
     def show_hud(self) -> None:
         pass
 
+    def apply_opacity(self, _percent: object = None) -> None:
+        pass
+
     def set_entries(self, *_args: object) -> None:
         pass
 
